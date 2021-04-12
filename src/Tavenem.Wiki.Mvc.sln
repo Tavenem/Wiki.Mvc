@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31025.218
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F2A2B551-C579-4961-9CF5-B127FF78ECA0}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
+		..\docs\CHANGELOG.md = ..\docs\CHANGELOG.md
+		..\docs\CODE_OF_CONDUCT.md = ..\docs\CODE_OF_CONDUCT.md
+		..\docs\CONTRIBUTING.md = ..\docs\CONTRIBUTING.md
+		..\.github\workflows\publish.yml = ..\.github\workflows\publish.yml
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tavenem.Wiki.Mvc", "Tavenem.Wiki.Mvc.csproj", "{1874FC01-066A-4168-91DB-E7FC92C97687}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tavenem.Wiki.Mvc.Sample", "..\sample\Tavenem.Wiki.Mvc.Sample.csproj", "{5C598F40-4B3A-4500-B097-3AEA620F02A9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1874FC01-066A-4168-91DB-E7FC92C97687}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1874FC01-066A-4168-91DB-E7FC92C97687}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1874FC01-066A-4168-91DB-E7FC92C97687}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1874FC01-066A-4168-91DB-E7FC92C97687}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C598F40-4B3A-4500-B097-3AEA620F02A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C598F40-4B3A-4500-B097-3AEA620F02A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C598F40-4B3A-4500-B097-3AEA620F02A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C598F40-4B3A-4500-B097-3AEA620F02A9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {73BFC8B9-590E-454F-AA21-C42ADE728628}
+	EndGlobalSection
+EndGlobal
