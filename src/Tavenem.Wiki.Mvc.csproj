@@ -45,7 +45,7 @@
   <PropertyGroup>
     <NpmStamp>node_modules/.install-stamp</NpmStamp>
   </PropertyGroup>
-  <Target Name="NpmInstall" BeforeTargets="Build" Inputs="package.json;package-lock.json" Outputs="$(NpmStamp)">
+  <Target Condition="'$(Configuration)'=='Debug'" Name="NpmInstall" BeforeTargets="Build" Inputs="package.json;package-lock.json" Outputs="$(NpmStamp)">
     <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
@@ -60,7 +60,7 @@
   </Target>
 
   <!-- npm build -->
-  <Target Name="NpmBuild" BeforeTargets="Build" Inputs="package.json;package-lock.json;postcss.config.js;content\script.js;content\edit.js;content\chat.js;wwwroot\styles.scss;content\vscode-dark.css" Outputs="wwwroot\script.js;wwwroot\edit.js;wwwroot\chat.js;wwwroot\libstyles.css;wwwroot\styles.css">
+  <Target Condition="'$(Configuration)'=='Debug'" Name="NpmBuild" BeforeTargets="Build" Inputs="package.json;package-lock.json;postcss.config.js;content\script.js;content\edit.js;content\chat.js;wwwroot\styles.scss;content\vscode-dark.css" Outputs="wwwroot\script.js;wwwroot\edit.js;wwwroot\chat.js;wwwroot\libstyles.css;wwwroot\styles.css">
     <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
