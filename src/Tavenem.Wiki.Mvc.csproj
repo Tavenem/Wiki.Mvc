@@ -21,6 +21,7 @@
     <RepositoryUrl>https://github.com/Tavenem/Wiki.Mvc.git</RepositoryUrl>
     <RepositoryBranch>main</RepositoryBranch>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,8 +30,8 @@
 
   <ItemGroup>
     <None Include="tavenem_128.png" Pack="true" PackagePath="\" />
-    <None Include="package.json" />
-    <Content Remove="package.json" />
+    <Content Update="package.json" Pack="false" />
+    <Content Update="package-lock.json" Pack="false" />
   </ItemGroup>
 
   <ItemGroup>
