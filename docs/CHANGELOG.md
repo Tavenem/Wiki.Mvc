@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2-preview
+### Fixed
+- Fix removal of old file during file upload for an existing item
+
 ## 0.1.1-preview
 ### Changed
 - Do not pack dev content

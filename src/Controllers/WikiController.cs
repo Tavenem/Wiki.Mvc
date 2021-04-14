@@ -1183,17 +1183,13 @@ namespace Tavenem.Wiki.Mvc.Controllers
 
             if (wikiItem is not null)
             {
-                var oldPath = Path.Combine(_environment.WebRootPath, wikiItem.FilePath[1..]);
                 try
                 {
-                    if (System.IO.File.Exists(oldPath))
-                    {
-                        System.IO.File.Delete(oldPath);
-                    }
+                    await _fileManager.DeleteFileAsync(wikiItem.FilePath).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unable to delete old file {Path} during overwrite operation", oldPath);
+                    _logger.LogError(ex, "Unable to delete old file {Path} during overwrite operation", wikiItem.FilePath);
                 }
             }
 
