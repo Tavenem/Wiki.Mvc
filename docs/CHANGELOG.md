@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3-preview
+### Updated
+- Update dependencies
+
 ## 0.1.2-preview
 ### Fixed
 - Fix removal of old file during file upload for an existing item
