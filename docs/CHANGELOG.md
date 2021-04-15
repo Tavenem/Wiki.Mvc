@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.3-preview - 0.1.5-preview
+## 0.1.3-preview - 0.1.6-preview
 ### Updated
 - Update dependencies
 

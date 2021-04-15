@@ -39,7 +39,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Tavenem.Wiki.Web" Version="0.1.3-preview" />
+    <PackageReference Include="Tavenem.Wiki.Web" Version="0.1.4-preview" />
   </ItemGroup>
 
   <!-- npm -->
