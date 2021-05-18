@@ -675,7 +675,7 @@ namespace Tavenem.Wiki.Mvc.Controllers
                                 && !string.IsNullOrEmpty(link.WikiNamespace))
                             {
                                 var article = Article.GetArticle(_wikiOptions, _dataStore, link.Title, link.WikiNamespace);
-                                if (article is not null && !article.IsDeleted)
+                                if (article?.IsDeleted == false)
                                 {
                                     preview = true;
                                     var namespaceStr = article.WikiNamespace == _wikiOptions.DefaultNamespace

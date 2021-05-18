@@ -52,16 +52,5 @@ namespace Tavenem.Wiki.Mvc.Sample.Services
         /// </returns>
         public ValueTask<IWikiUser?> GetUserAsync(ClaimsPrincipal? principal)
             => new(_User);
-
-        /// <summary>
-        /// Returns a list of all wiki admin users.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="Task{TResult}" /> that represents the result of the asynchronous query, a
-        /// list of <see cref="IWikiUser" />s who have <see cref="IWikiUser.IsWikiAdmin" /> set to
-        /// <see langword="true" />.
-        /// </returns>
-        public ValueTask<IList<IWikiUser>> GetWikiAdminUsersAsync()
-            => new(new List<IWikiUser> { _User });
     }
 }
