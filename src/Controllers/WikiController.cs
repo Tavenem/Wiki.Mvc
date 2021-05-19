@@ -1807,10 +1807,10 @@ namespace Tavenem.Wiki.Mvc.Controllers
             return null;
         }
 
-        private bool VerifyPermission(WikiRouteData data, IWikiUser? user, bool edit = false)
+        private static bool VerifyPermission(WikiRouteData data, IWikiUser? user, bool edit = false)
             => VerifyPermission(data.WikiItem, user, data.IsUserPage, data.IsGroupPage, edit);
 
-        private bool VerifyPermission(Article? item, IWikiUser? user, bool userPage = false, bool groupPage = false, bool edit = false)
+        private static bool VerifyPermission(Article? item, IWikiUser? user, bool userPage = false, bool groupPage = false, bool edit = false)
         {
             if (user?.IsDeleted == true || user?.IsDisabled == true)
             {
@@ -1836,11 +1836,7 @@ namespace Tavenem.Wiki.Mvc.Controllers
 
                 if (groupPage)
                 {
-                    if (item.Title == _wikiWebOptions.AdminGroupName)
-                    {
-                        return user.IsWikiAdmin;
-                    }
-                    else if (user.Groups is null)
+                    if (user.Groups is null)
                     {
                         return false;
                     }
