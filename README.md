@@ -48,6 +48,10 @@ project, the following steps should be taken:
    The next parameter is either an instance of `IWikiMvcOptions` or a function which provides one.
    This interface allows you to configure the wiki's MVC implementation features, and includes the
    following properties:
+   - `ArticleEndMatter`: A function which gets the name or path of a partial view which should be
+     displayed after the content of the given wiki article (before the category list).
+   - `ArticleFrontMatter`: A function which gets the name or path of a partial view which should be
+     displayed before the content of the given wiki article (after the subtitle).
    - `CompactLayoutPath`: The path to the layout used when requesting a compact version of a wiki
      page. Wiki pages will be nested within this layout.
    
@@ -66,6 +70,10 @@ project, the following steps should be taken:
      version of the wiki.
 
      If left null the compact view cannot be reached at a particular port.
+   - `CreatePermission`: A function which determines whether the given user may create a new
+     article in the given namespace.
+
+     Not invoked for admin users, who always have permission.
    - `LoginPath`: The relative path to the site's login page.
      
      For security reasons, only a local path is permitted. If your authentication mechanisms are

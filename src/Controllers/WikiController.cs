@@ -214,6 +214,11 @@ namespace Tavenem.Wiki.Mvc.Controllers
                 {
                     return View("NotAuthorized", data);
                 }
+                else if (!user.IsWikiAdmin
+                    && !_wikiMvcOptions.GetCreatePermission(user, data.WikiNamespace))
+                {
+                    return View("NotAuthorized", data);
+                }
             }
             else if (wikiItem?.Owner is not null
                 && user.Id != wikiItem.Owner

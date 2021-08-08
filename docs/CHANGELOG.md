@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0-preview
+### Added
+- `GetCreatePermission` on `IWikiMvcOptions`, associated `CreatePermission` callback on `WikiMvcOptions`
+
 ## 0.1.3-preview - 0.1.10-preview
 ### Updated
 - Update dependencies
