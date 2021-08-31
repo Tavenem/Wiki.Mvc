@@ -1,4 +1,6 @@
-﻿$red:     #dc3545 !default;
+﻿@use "sass:math";
+
+$red:     #dc3545 !default;
 $yellow:  #ffc107 !default;
 
 $primary:       #548fff !default;
@@ -71,7 +73,7 @@ $headings-line-height: 1.2 !default;
 
 $spacer: 1rem !default;
 
-$headings-margin-bottom:  $spacer / 2 !default;
+$headings-margin-bottom:  math.div($spacer, 2) !default;
 $paragraph-margin-bottom: 1rem !default;
 $label-margin-bottom:     .5rem !default;
 

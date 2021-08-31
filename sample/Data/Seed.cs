@@ -1,84 +1,82 @@
 ﻿using Tavenem.DataStorage;
 using Tavenem.Wiki.Web;
-using System;
-using System.Threading.Tasks;
 
-namespace Tavenem.Wiki.Mvc.Sample.Data
+namespace Tavenem.Wiki.Mvc.Sample.Data;
+
+public static class Seed
 {
-    public static class Seed
+    public static async Task AddDefaultWikiPagesAsync(
+        IWikiOptions wikiOptions,
+        IWikiWebOptions wikiWebOptions,
+        IDataStore dataStore,
+        string adminId)
     {
-        public static async Task AddDefaultWikiPagesAsync(
-            IWikiOptions wikiOptions,
-            IWikiWebOptions wikiWebOptions,
-            IDataStore dataStore,
-            string adminId)
+        var welcomeReference = await PageReference
+            .GetPageReferenceAsync(dataStore, "Welcome", wikiOptions.TransclusionNamespace)
+            .ConfigureAwait(false);
+        if (welcomeReference is null)
         {
-            var welcomeReference = await PageReference
-                .GetPageReferenceAsync(dataStore, "Welcome", wikiOptions.TransclusionNamespace)
+            _ = await GetDefaultWelcomeAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
+        }
+
+        var mainReference = await PageReference
+            .GetPageReferenceAsync(dataStore, wikiOptions.MainPageTitle, wikiOptions.DefaultNamespace)
+            .ConfigureAwait(false);
+        if (mainReference is null)
+        {
+            _ = await GetDefaultMainAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
+        }
+
+        if (!string.IsNullOrEmpty(wikiWebOptions.AboutPageTitle))
+        {
+            var aboutReference = await PageReference
+                .GetPageReferenceAsync(dataStore, wikiWebOptions.AboutPageTitle, wikiWebOptions.SystemNamespace)
                 .ConfigureAwait(false);
-            if (welcomeReference is null)
+            if (aboutReference is null)
             {
-                _ = await GetDefaultWelcomeAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
-            }
-
-            var mainReference = await PageReference
-                .GetPageReferenceAsync(dataStore, wikiOptions.MainPageTitle, wikiOptions.DefaultNamespace)
-                .ConfigureAwait(false);
-            if (mainReference is null)
-            {
-                _ = await GetDefaultMainAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
-            }
-
-            if (!string.IsNullOrEmpty(wikiWebOptions.AboutPageTitle))
-            {
-                var aboutReference = await PageReference
-                    .GetPageReferenceAsync(dataStore, wikiWebOptions.AboutPageTitle, wikiWebOptions.SystemNamespace)
-                    .ConfigureAwait(false);
-                if (aboutReference is null)
-                {
-                    _ = await GetDefaultAboutAsync(wikiOptions, wikiWebOptions, dataStore, adminId).ConfigureAwait(false);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(wikiWebOptions.HelpPageTitle))
-            {
-                var helpReference = await PageReference
-                    .GetPageReferenceAsync(dataStore, wikiWebOptions.HelpPageTitle, wikiWebOptions.SystemNamespace)
-                    .ConfigureAwait(false);
-                if (helpReference is null)
-                {
-                    _ = await GetDefaultHelpAsync(wikiOptions, wikiWebOptions, dataStore, adminId).ConfigureAwait(false);
-                }
-            }
-
-            var mvcReference = await PageReference
-                .GetPageReferenceAsync(dataStore, "MVC", wikiOptions.DefaultNamespace)
-                .ConfigureAwait(false);
-            if (mvcReference is null)
-            {
-                _ = await GetDefaultMVCAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
-            }
-
-            var category = Category.GetCategory(wikiOptions, dataStore, "System pages");
-            if (category is null)
-            {
-                throw new Exception("Failed to create category during article creation");
-            }
-            if (!category.MarkdownContent.StartsWith("These are system pages", StringComparison.Ordinal))
-            {
-                await SetDefaultCategoryAsync(wikiOptions, dataStore, category, adminId).ConfigureAwait(false);
+                _ = await GetDefaultAboutAsync(wikiOptions, wikiWebOptions, dataStore, adminId).ConfigureAwait(false);
             }
         }
 
-        private static Task<Article> GetDefaultAboutAsync(
-            IWikiOptions wikiOptions,
-            IWikiWebOptions wikiWebOptions,
-            IDataStore dataStore,
-            string adminId) => Article.NewAsync(
-                wikiOptions,
-                dataStore,
-                wikiWebOptions.AboutPageTitle ?? "About",
-                adminId,
+        if (!string.IsNullOrEmpty(wikiWebOptions.HelpPageTitle))
+        {
+            var helpReference = await PageReference
+                .GetPageReferenceAsync(dataStore, wikiWebOptions.HelpPageTitle, wikiWebOptions.SystemNamespace)
+                .ConfigureAwait(false);
+            if (helpReference is null)
+            {
+                _ = await GetDefaultHelpAsync(wikiOptions, wikiWebOptions, dataStore, adminId).ConfigureAwait(false);
+            }
+        }
+
+        var mvcReference = await PageReference
+            .GetPageReferenceAsync(dataStore, "MVC", wikiOptions.DefaultNamespace)
+            .ConfigureAwait(false);
+        if (mvcReference is null)
+        {
+            _ = await GetDefaultMVCAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
+        }
+
+        var category = Category.GetCategory(wikiOptions, dataStore, "System pages");
+        if (category is null)
+        {
+            throw new Exception("Failed to create category during article creation");
+        }
+        if (!category.MarkdownContent.StartsWith("These are system pages", StringComparison.Ordinal))
+        {
+            await SetDefaultCategoryAsync(wikiOptions, dataStore, category, adminId).ConfigureAwait(false);
+        }
+    }
+
+    private static Task<Article> GetDefaultAboutAsync(
+        IWikiOptions wikiOptions,
+        IWikiWebOptions wikiWebOptions,
+        IDataStore dataStore,
+        string adminId) => Article.NewAsync(
+            wikiOptions,
+            dataStore,
+            wikiWebOptions.AboutPageTitle ?? "About",
+            adminId,
 @$"{{{{Welcome}}}}
 
 The [Tavenem.Wiki](https://github.com/Tavenem/Wiki) package is a [.NET](https://dotnet.microsoft.com) [[w:Wiki||]] library.
@@ -90,19 +88,19 @@ The ""reference"" implementation included out-of-the-box ([Tavenem.Wiki.Mvc](htt
 See the [[System:Help|]] page for usage information.
 
 [[{wikiOptions.CategoryNamespace}:System pages]]",
-                wikiWebOptions.SystemNamespace,
-                adminId,
-                new[] { adminId });
+            wikiWebOptions.SystemNamespace,
+            adminId,
+            new[] { adminId });
 
-        private static Task<Article> GetDefaultHelpAsync(
-            IWikiOptions wikiOptions,
-            IWikiWebOptions wikiWebOptions,
-            IDataStore dataStore,
-            string adminId) => Article.NewAsync(
-                wikiOptions,
-                dataStore,
-                wikiWebOptions.HelpPageTitle ?? "Help",
-                adminId,
+    private static Task<Article> GetDefaultHelpAsync(
+        IWikiOptions wikiOptions,
+        IWikiWebOptions wikiWebOptions,
+        IDataStore dataStore,
+        string adminId) => Article.NewAsync(
+            wikiOptions,
+            dataStore,
+            wikiWebOptions.HelpPageTitle ?? "Help",
+            adminId,
 @"{{Welcome}}
 
 This page includes various information which will help you to get a [Tavenem.Wiki](https://github.com/Tavenem/Wiki) instance up and running.
@@ -117,69 +115,68 @@ The `Tavenem.Wiki.Mvc` package contains a sample/default implementation of `Tave
 
 [[" + wikiOptions.CategoryNamespace + @":System pages]]
 [[" + wikiOptions.CategoryNamespace + ":Help pages]]",
-                wikiWebOptions.SystemNamespace,
-                adminId,
-                new[] { adminId });
+            wikiWebOptions.SystemNamespace,
+            adminId,
+            new[] { adminId });
 
-        private static Task<Article> GetDefaultMainAsync(
-            IWikiOptions wikiOptions,
-            IDataStore dataStore,
-            string adminId) => Article.NewAsync(
-                wikiOptions,
-                dataStore,
-                wikiOptions.MainPageTitle,
-                adminId,
+    private static Task<Article> GetDefaultMainAsync(
+        IWikiOptions wikiOptions,
+        IDataStore dataStore,
+        string adminId) => Article.NewAsync(
+            wikiOptions,
+            dataStore,
+            wikiOptions.MainPageTitle,
+            adminId,
 @$"{{{{Welcome}}}}
 
 See the [[System:About|]] page or the [[System:Help|]] page for more information.
 
 [[{wikiOptions.CategoryNamespace}:System pages]]",
-                wikiOptions.DefaultNamespace,
-                adminId,
-                new[] { adminId });
+            wikiOptions.DefaultNamespace,
+            adminId,
+            new[] { adminId });
 
-        private static Task<Article> GetDefaultMVCAsync(
-            IWikiOptions wikiOptions,
-            IDataStore dataStore,
-            string adminId) => Article.NewAsync(
-                wikiOptions,
-                dataStore,
-                "MVC",
-                adminId,
+    private static Task<Article> GetDefaultMVCAsync(
+        IWikiOptions wikiOptions,
+        IDataStore dataStore,
+        string adminId) => Article.NewAsync(
+            wikiOptions,
+            dataStore,
+            "MVC",
+            adminId,
 @"{{Welcome}}
 
 The [Tavenem.Wiki.Mvc](https://github.com/Tavenem/Wiki.Mvc) package contains a sample/default implementation of [Tavenem.Wiki](https://github.com/Tavenem/Wiki) for use with an [ASP.NET Core MVC](https://docs.microsoft.com/en-us/aspnet/core/mvc/overview) site. Note that this isn't a complete website, but rather a [Razor class library](https://docs.microsoft.com/en-us/aspnet/core/razor-pages/ui-class) which can be included in an [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core) project to enable wiki functionality.
 
 [[" + wikiOptions.CategoryNamespace + ":Help pages]]",
-                wikiOptions.DefaultNamespace,
-                adminId,
-                new[] { adminId });
+            wikiOptions.DefaultNamespace,
+            adminId,
+            new[] { adminId });
 
-        private static Task<Article> GetDefaultWelcomeAsync(
-            IWikiOptions wikiOptions,
-            IDataStore dataStore,
-            string adminId) => Article.NewAsync(
-                wikiOptions,
-                dataStore,
-                "Welcome",
-                adminId,
+    private static Task<Article> GetDefaultWelcomeAsync(
+        IWikiOptions wikiOptions,
+        IDataStore dataStore,
+        string adminId) => Article.NewAsync(
+            wikiOptions,
+            dataStore,
+            "Welcome",
+            adminId,
 @$"Welcome to the [Tavenem.Wiki](https://github.com/Tavenem/Wiki) sample.
 
 {{{{ifnottemplate|[[{wikiOptions.CategoryNamespace}:System pages]]}}}}",
-                wikiOptions.TransclusionNamespace,
-                adminId,
-                new[] { adminId });
+            wikiOptions.TransclusionNamespace,
+            adminId,
+            new[] { adminId });
 
-        private static Task SetDefaultCategoryAsync(
-            IWikiOptions wikiOptions,
-            IDataStore dataStore,
-            Category category,
-            string adminId) => category.ReviseAsync(
-                wikiOptions,
-                dataStore,
-                adminId,
-                markdown: "These are system pages in the [Tavenem.Wiki](https://github.com/Tavenem/Wiki) sample [[w:Wiki||]].",
-                revisionComment: "Provide a description",
-                allowedEditors: new[] { adminId });
-    }
+    private static Task SetDefaultCategoryAsync(
+        IWikiOptions wikiOptions,
+        IDataStore dataStore,
+        Category category,
+        string adminId) => category.ReviseAsync(
+            wikiOptions,
+            dataStore,
+            adminId,
+            markdown: "These are system pages in the [Tavenem.Wiki](https://github.com/Tavenem/Wiki) sample [[w:Wiki||]].",
+            revisionComment: "Provide a description",
+            allowedEditors: new[] { adminId });
 }

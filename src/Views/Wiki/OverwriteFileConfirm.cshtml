@@ -6,7 +6,7 @@
 
 <div class="wiki-upload">
     <h4 class="wiki-overwrite-title warning-text">This file already exists</h4>
-    @if (Model.OverwritePermission)
+    @if (Model?.OverwritePermission == true)
     {
         <p>Do you want to update it with a new version of the file?</p>
     }
@@ -24,7 +24,7 @@
         <input asp-for="OwnerSelf" type="hidden" />
         <input asp-for="AllowedEditors" type="hidden" />
         <input asp-for="AllowedViewers" type="hidden" />
-        @if (Model.OverwritePermission)
+        @if (Model?.OverwritePermission == true)
         {
             <button class="btn btn-warning" type="submit" title="Erase the original file and replace it with this new submission">Overwrite</button>
             <a class="btn btn-secondary" href="@Url.Action("ShowUpload", Model)" title="Go back to choose a new name, or make other changes">Cancel</a>

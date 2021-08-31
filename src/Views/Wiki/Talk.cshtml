@@ -4,12 +4,12 @@
 
 <div class="wiki-talk-messages">
     <ul id="wiki-talk-message-list"></ul>
-    @if ((Model.Messages?.Count ?? 0) == 0)
+    @if ((Model?.Messages?.Count ?? 0) == 0)
     {
         <div class="wiki-talk-nomessages"><p>No messages yet</p></div>
     }
 </div>
-@if (Model.Data.CanEdit)
+@if (Model?.Data.CanEdit == true)
 {
     <div id="wiki-talk-newmessage" class="wiki-talk-reply">
         <textarea id="wiki-talk-newmessage-input" class="form-control" placeholder="Add a new message"></textarea>
@@ -50,9 +50,9 @@ else
     <script src="~/_content/Tavenem.Wiki.Mvc/chat.js"></script>
     <script>
         window.addEventListener("load", function () {
-            window.wikimvcchat.init("@Model.TalkHubRoute", "@WikiOptions.WikiLinkPrefix", "@WikiWebOptions.UserNamespace", "@Model.TenorAPIKey", "@Model.TopicId", '@Html.Raw(
+            window.wikimvcchat.init("@Model?.TalkHubRoute", "@WikiOptions.WikiLinkPrefix", "@WikiWebOptions.UserNamespace", "@Model?.TenorAPIKey", "@Model?.TopicId", '@Html.Raw(
                 System.Text.Json.JsonSerializer.Serialize(
-                    Model.Messages,
+                    Model?.Messages,
                     new System.Text.Json.JsonSerializerOptions
                     {
                         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,

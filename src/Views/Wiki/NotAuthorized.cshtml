@@ -6,7 +6,7 @@
 
 <div class="placard">
     <h2>Not authorized</h2>
-    @if (Model.IsEdit)
+    @if (Model?.IsEdit == true)
     {
         if (Model.WikiItem is null)
         {

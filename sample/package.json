@@ -3,12 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "devDependencies": {
-    "bootstrap": "^4.6.0",
-    "cssnano": "^5.0.0",
-    "postcss": "^8.2.10",
-    "postcss-cli": "^8.3.1",
-    "postcss-preset-env": "^6.7.0",
-    "sass": "^1.32.8"
+    "bootstrap": "5.1.0",
+    "cssnano": "5.0.8",
+    "postcss": "8.3.6",
+    "postcss-cli": "8.3.1",
+    "postcss-preset-env": "6.7.0",
+    "sass": "1.38.2"
   },
   "scripts": {
     "scss": "sass --load-path=node_modules/bootstrap/scss --load-path=../../Web/Mvc/wwwroot --style=compressed ./styles/site.scss ./wwwroot/site.css",

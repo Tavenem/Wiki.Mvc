@@ -3,11 +3,11 @@
 @inject IWikiMvcOptions WikiMvcOptions
 
 <div class="wiki-site-subtitle">From @WikiOptions.SiteName</div>
-@if (Model.IsDiff)
+@if (Model?.IsDiff == true)
 {
     <div class="wiki-parser-output wiki-diff">@Html.Raw(Model.Html)</div>
 }
-else
+else if (Model is not null)
 {
     if (Model.Data.WikiItem is not null)
     {

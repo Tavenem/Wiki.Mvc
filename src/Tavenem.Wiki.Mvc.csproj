@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <LangVersion>Latest</LangVersion>
+	<TargetFramework>net6.0</TargetFramework>
+	<LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
@@ -39,7 +39,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Tavenem.Wiki.Web" Version="0.3.1-preview" />
+    <PackageReference Include="Tavenem.Wiki.Web" Version="0.4.0-preview" />
   </ItemGroup>
 
   <!-- npm -->

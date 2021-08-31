@@ -3,15 +3,15 @@
 @inject IWikiWebOptions WikiWebOptions
 
 <div class="wiki-site-subtitle">From @WikiOptions.SiteName</div>
-@if (Model.IsDiff)
+@if (Model?.IsDiff == true)
 {
     <div class="wiki-parser-output wiki-diff">@Html.Raw(Model.Html)</div>
 }
-else
+else if (Model is not null)
 {
     <div class="wiki-parser-output">@Html.Raw(Model.Html)</div>
 }
-@if (Model.Users.Count > 0)
+@if (Model?.Users.Count > 0)
 {
     <h2>Members</h2>
     <p>This group has the following @($"{Model.Users.Count:N0}") members.</p>

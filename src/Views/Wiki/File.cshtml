@@ -2,7 +2,7 @@
 @inject IWikiOptions WikiOptions
 @inject IWikiWebOptions WikiWebOptions
 
-@if (Model.Data.WikiItem is WikiFile file)
+@if (Model?.Data.WikiItem is WikiFile file)
 {
     if (file.FileType.StartsWith("image"))
     {
@@ -18,7 +18,7 @@
     </p>
     <div class="wiki-parser-output">@Html.Raw(Model.Html)</div>
 }
-else
+else if (Model is not null)
 {
     <div class="wiki-file-missing">
         <p>The file associated with "@Model.Data.Title" is missing.</p>
