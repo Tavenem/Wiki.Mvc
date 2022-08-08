@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Tavenem.Wiki.Mvc.Sample;
 
@@ -57,6 +58,16 @@ public class WikiUser : IdentityUser, IWikiUser
     /// </para>
     /// </summary>
     public int UploadLimit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the user name for this user.
+    /// </summary>
+    [NotNull, ProtectedPersonalData]
+    public override string? UserName
+    {
+        get => base.UserName ?? string.Empty;
+        set => base.UserName = value;
+    }
 
     /// <summary>
     /// Initializes a new instance of <see cref="WikiUser"/>.

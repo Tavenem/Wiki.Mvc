@@ -27,8 +27,8 @@ public class WikiGroup : IdItem, IWikiGroup
     /// <summary>
     /// A built-in, read-only type discriminator.
     /// </summary>
-    [JsonPropertyOrder(-1)]
-    public string IdItemTypeName => WikiGroupIdItemTypeName;
+    [JsonPropertyOrder(-2)]
+    public override string IdItemTypeName => WikiGroupIdItemTypeName;
 
     /// <summary>
     /// <para>
@@ -100,7 +100,6 @@ public class WikiGroup : IdItem, IWikiGroup
     /// Initializes a new instance of <see cref="UserGroup"/>.
     /// </summary>
     /// <param name="id">The item's <see cref="IdItem.Id"/>.</param>
-    /// <param name="idItemTypeName">The type discriminator.</param>
     /// <param name="groupName">
     /// The display name for this group.
     /// </param>
@@ -134,9 +133,6 @@ public class WikiGroup : IdItem, IWikiGroup
     [JsonConstructor]
     public WikiGroup(
         string id,
-#pragma warning disable IDE0060 // Remove unused parameter: Used by deserializers.
-        string idItemTypeName,
-#pragma warning restore IDE0060 // Remove unused parameter
         string groupName,
         string owner,
         int uploadLimit) : base(id)

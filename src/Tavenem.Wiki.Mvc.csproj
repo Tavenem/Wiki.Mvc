@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-	<TargetFramework>net6.0</TargetFramework>
-	<LangVersion>preview</LangVersion>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>enable</ImplicitUsings>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
   </PropertyGroup>
 
@@ -13,7 +14,7 @@
     <Version>1.0.0</Version>
     <Authors>Wil Stead</Authors>
     <Description>An implementation of Tavenem.Wiki for ASP.NET MVC.</Description>
-    <Copyright>Copyright © 2019-2021 Wil Stead</Copyright>
+    <Copyright>Copyright © 2019-2022 Wil Stead</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/Tavenem/Wiki.Mvc</PackageProjectUrl>
     <PackageIcon>tavenem_128.png</PackageIcon>
@@ -31,15 +32,14 @@
   <ItemGroup>
     <None Include="tavenem_128.png" Pack="true" PackagePath="\" />
     <Content Update="package.json" Pack="false" />
-    <Content Update="package-lock.json" Pack="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Tavenem.Wiki.Web" Version="0.4.0-preview" />
+    <PackageReference Include="Tavenem.Wiki.Web" Version="0.5.0-preview" />
   </ItemGroup>
 
   <!-- npm -->
