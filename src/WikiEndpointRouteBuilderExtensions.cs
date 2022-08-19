@@ -5,7 +5,6 @@ using Tavenem.Wiki.Mvc;
 using Tavenem.Wiki.Mvc.Hubs;
 using Tavenem.Wiki.Mvc.Services.FileManager;
 using Tavenem.Wiki.Mvc.Services.Search;
-using Tavenem.Wiki.Web;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -25,9 +24,6 @@ public static class WikiEndpointRouteBuilderExtensions
     /// <param name="groupManager">An <see cref="IWikiGroupManager"/> instance.</param>
     /// <param name="wikiOptions">
     /// The options used to configure the wiki system.
-    /// </param>
-    /// <param name="wikiWebOptions">
-    /// The options used to configure the wiki web system.
     /// </param>
     /// <param name="wikiMvcOptions">
     /// The options used to configure the wiki MVC system.
@@ -54,7 +50,6 @@ public static class WikiEndpointRouteBuilderExtensions
         IWikiUserManager userManager,
         IWikiGroupManager groupManager,
         IWikiOptions? wikiOptions = null,
-        IWikiWebOptions? wikiWebOptions = null,
         IWikiMvcOptions? wikiMvcOptions = null,
         IFileManager? fileManager = null,
         ISearchClient? searchClient = null)
@@ -66,14 +61,6 @@ public static class WikiEndpointRouteBuilderExtensions
         else
         {
             services.AddScoped<IWikiOptions>(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
-        }
-        if (wikiWebOptions is not null)
-        {
-            services.AddScoped(_ => wikiWebOptions);
-        }
-        else
-        {
-            services.AddScoped<IWikiWebOptions>(_ => new WikiWebOptions());
         }
         if (wikiMvcOptions is not null)
         {
@@ -123,9 +110,6 @@ public static class WikiEndpointRouteBuilderExtensions
     /// <param name="wikiOptions">
     /// The options used to configure the wiki system.
     /// </param>
-    /// <param name="wikiWebOptions">
-    /// The options used to configure the wiki web system.
-    /// </param>
     /// <param name="wikiMvcOptions">
     /// The options used to configure the wiki MVC system.
     /// </param>
@@ -151,7 +135,6 @@ public static class WikiEndpointRouteBuilderExtensions
         Type userManagerType,
         Type groupManagerType,
         IWikiOptions? wikiOptions = null,
-        IWikiWebOptions? wikiWebOptions = null,
         IWikiMvcOptions? wikiMvcOptions = null,
         Type? fileManagerType = null,
         Type? searchClientType = null)
@@ -163,14 +146,6 @@ public static class WikiEndpointRouteBuilderExtensions
         else
         {
             services.AddScoped<IWikiOptions>(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
-        }
-        if (wikiWebOptions is not null)
-        {
-            services.AddScoped(_ => wikiWebOptions);
-        }
-        else
-        {
-            services.AddScoped<IWikiWebOptions>(_ => new WikiWebOptions());
         }
         if (wikiMvcOptions is not null)
         {
@@ -217,9 +192,6 @@ public static class WikiEndpointRouteBuilderExtensions
     /// <param name="wikiOptions">
     /// The options used to configure the wiki system.
     /// </param>
-    /// <param name="wikiWebOptions">
-    /// The options used to configure the wiki web system.
-    /// </param>
     /// <param name="wikiMvcOptions">
     /// The options used to configure the wiki MVC system.
     /// </param>
@@ -245,7 +217,6 @@ public static class WikiEndpointRouteBuilderExtensions
         Func<IServiceProvider, IWikiUserManager> userManagerBuilder,
         Func<IServiceProvider, IWikiGroupManager> groupManagerBuilder,
         IWikiOptions? wikiOptions = null,
-        IWikiWebOptions? wikiWebOptions = null,
         IWikiMvcOptions? wikiMvcOptions = null,
         Func<IServiceProvider, IFileManager>? fileManagerBuilder = null,
         Func<IServiceProvider, ISearchClient>? searchClientBuilder = null)
@@ -257,14 +228,6 @@ public static class WikiEndpointRouteBuilderExtensions
         else
         {
             services.AddScoped<IWikiOptions>(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
-        }
-        if (wikiWebOptions is not null)
-        {
-            services.AddScoped(_ => wikiWebOptions);
-        }
-        else
-        {
-            services.AddScoped<IWikiWebOptions>(_ => new WikiWebOptions());
         }
         if (wikiMvcOptions is not null)
         {
@@ -307,9 +270,6 @@ public static class WikiEndpointRouteBuilderExtensions
     /// <param name="wikiOptionsBuilder">
     /// A function which provides the options used to configure the wiki system.
     /// </param>
-    /// <param name="wikiWebOptionsBuilder">
-    /// A function which provides the options used to configure the wiki web system.
-    /// </param>
     /// <param name="wikiMvcOptionsBuilder">
     /// A function which provides the options used to configure the wiki MVC system.
     /// </param>
@@ -335,13 +295,11 @@ public static class WikiEndpointRouteBuilderExtensions
         IWikiUserManager userManager,
         IWikiGroupManager groupManager,
         Func<IServiceProvider, IWikiOptions> wikiOptionsBuilder,
-        Func<IServiceProvider, IWikiWebOptions> wikiWebOptionsBuilder,
         Func<IServiceProvider, IWikiMvcOptions> wikiMvcOptionsBuilder,
         IFileManager? fileManager = null,
         ISearchClient? searchClient = null)
     {
         services.AddScoped(wikiOptionsBuilder);
-        services.AddScoped(wikiWebOptionsBuilder);
         services.AddScoped(wikiMvcOptionsBuilder);
         services.AddScoped(_ => userManager);
         services.AddScoped(_ => groupManager);
@@ -382,9 +340,6 @@ public static class WikiEndpointRouteBuilderExtensions
     /// <param name="wikiOptionsBuilder">
     /// A function which provides the options used to configure the wiki system.
     /// </param>
-    /// <param name="wikiWebOptionsBuilder">
-    /// A function which provides the options used to configure the wiki web system.
-    /// </param>
     /// <param name="wikiMvcOptionsBuilder">
     /// A function which provides the options used to configure the wiki MVC system.
     /// </param>
@@ -410,13 +365,11 @@ public static class WikiEndpointRouteBuilderExtensions
         Type userManagerType,
         Type groupManagerType,
         Func<IServiceProvider, IWikiOptions> wikiOptionsBuilder,
-        Func<IServiceProvider, IWikiWebOptions> wikiWebOptionsBuilder,
         Func<IServiceProvider, IWikiMvcOptions> wikiMvcOptionsBuilder,
         Type? fileManagerType = null,
         Type? searchClientType = null)
     {
         services.AddScoped(wikiOptionsBuilder);
-        services.AddScoped(wikiWebOptionsBuilder);
         services.AddScoped(wikiMvcOptionsBuilder);
         services.AddScoped(typeof(IWikiUserManager), userManagerType);
         services.AddScoped(typeof(IWikiGroupManager), groupManagerType);
@@ -454,9 +407,6 @@ public static class WikiEndpointRouteBuilderExtensions
     /// <param name="wikiOptionsBuilder">
     /// A function which provides the options used to configure the wiki system.
     /// </param>
-    /// <param name="wikiWebOptionsBuilder">
-    /// A function which provides the options used to configure the wiki web system.
-    /// </param>
     /// <param name="wikiMvcOptionsBuilder">
     /// A function which provides the options used to configure the wiki MVC system.
     /// </param>
@@ -482,13 +432,11 @@ public static class WikiEndpointRouteBuilderExtensions
         Func<IServiceProvider, IWikiUserManager> userManagerBuilder,
         Func<IServiceProvider, IWikiGroupManager> groupManagerBuilder,
         Func<IServiceProvider, IWikiOptions> wikiOptionsBuilder,
-        Func<IServiceProvider, IWikiWebOptions> wikiWebOptionsBuilder,
         Func<IServiceProvider, IWikiMvcOptions> wikiMvcOptionsBuilder,
         Func<IServiceProvider, IFileManager>? fileManagerBuilder = null,
         Func<IServiceProvider, ISearchClient>? searchClientBuilder = null)
     {
         services.AddScoped(wikiOptionsBuilder);
-        services.AddScoped(wikiWebOptionsBuilder);
         services.AddScoped(wikiMvcOptionsBuilder);
         services.AddScoped(userManagerBuilder);
         services.AddScoped(groupManagerBuilder);

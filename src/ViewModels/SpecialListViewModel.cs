@@ -2,7 +2,6 @@
 using System.Text;
 using Tavenem.DataStorage;
 using Tavenem.Wiki.Mvc.Models;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 
@@ -27,7 +26,6 @@ public record SpecialListViewModel
     /// </summary>
     public SpecialListViewModel(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         WikiRouteData data,
         SpecialListType type,
         bool descending,
@@ -40,7 +38,7 @@ public record SpecialListViewModel
             descending,
             items,
             GetDescription(wikiOptions, type, data),
-            GetSecondaryDescription(wikiOptions, wikiWebOptions, type),
+            GetSecondaryDescription(wikiOptions, type),
             missingItems,
             sort,
             filter)
@@ -51,7 +49,6 @@ public record SpecialListViewModel
     /// </summary>
     public static async Task<SpecialListViewModel> NewAsync(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         WikiRouteData data,
         SpecialListType type,
@@ -153,10 +150,10 @@ public record SpecialListViewModel
             _ => new PagedList<Article>(null, 1, pageSize, 0),
         };
         var missing = type == SpecialListType.Missing_Pages
-            ? await GetMissingAsync(wikiWebOptions, dataStore, pageNumber, pageSize, descending, filter).ConfigureAwait(false)
+            ? await GetMissingAsync(wikiOptions, dataStore, pageNumber, pageSize, descending, filter).ConfigureAwait(false)
             : null;
 
-        return new SpecialListViewModel(wikiOptions, wikiWebOptions, data, type, descending, list, missing, sort, filter);
+        return new SpecialListViewModel(wikiOptions, data, type, descending, list, missing, sort, filter);
     }
 
     private static string GetDescription(IWikiOptions options, SpecialListType type, WikiRouteData data) => type switch
@@ -286,7 +283,7 @@ public record SpecialListViewModel
     }
 
     private static async Task<IPagedList<MissingPage>> GetMissingAsync(
-        IWikiWebOptions options,
+        IWikiOptions options,
         IDataStore dataStore,
         int pageNumber = 1,
         int pageSize = 50,
@@ -308,30 +305,30 @@ public record SpecialListViewModel
             .ConfigureAwait(false);
     }
 
-    private static string? GetSecondaryDescription(IWikiOptions wikiOptions, IWikiWebOptions wikiWebOptions, SpecialListType type)
+    private static string? GetSecondaryDescription(IWikiOptions wikiOptions, SpecialListType type)
     {
         if (type is SpecialListType.All_Categories
             or SpecialListType.All_Files
             or SpecialListType.All_Pages)
         {
-            if (!string.IsNullOrEmpty(wikiWebOptions.ContentsPageTitle))
+            if (!string.IsNullOrEmpty(wikiOptions.ContentsPageTitle))
             {
-                return $"For a more organized overview you may wish to check the <a href=\"/{wikiOptions.WikiLinkPrefix}/{wikiWebOptions.SystemNamespace}:{wikiWebOptions.ContentsPageTitle}\" class=\"wiki-link wiki-link-exists\">{wikiWebOptions.ContentsPageTitle}</a> page.";
+                return $"For a more organized overview you may wish to check the <a href=\"/{wikiOptions.WikiLinkPrefix}/{wikiOptions.SystemNamespace}:{wikiOptions.ContentsPageTitle}\" class=\"wiki-link wiki-link-exists\">{wikiOptions.ContentsPageTitle}</a> page.";
             }
         }
         else if (type == SpecialListType.Uncategorized_Categories)
         {
             var sb = new StringBuilder("Note that top-level categories might show up in this list deliberately, and may not require categorization.");
-            if (!string.IsNullOrEmpty(wikiWebOptions.ContentsPageTitle))
+            if (!string.IsNullOrEmpty(wikiOptions.ContentsPageTitle))
             {
                 sb.Append("Top-level categories are typically linked on the <a href=\"/")
                     .Append(wikiOptions.WikiLinkPrefix)
                     .Append('/')
-                    .Append(wikiWebOptions.SystemNamespace)
+                    .Append(wikiOptions.SystemNamespace)
                     .Append(':')
-                    .Append(wikiWebOptions.ContentsPageTitle)
+                    .Append(wikiOptions.ContentsPageTitle)
                     .Append("\" class=\"wiki-link wiki-link-exists\">")
-                    .Append(wikiWebOptions.ContentsPageTitle)
+                    .Append(wikiOptions.ContentsPageTitle)
                     .Append("</a>, or in some other prominent place (such as the <a href=\"/")
                     .Append(wikiOptions.WikiLinkPrefix)
                     .Append('/')

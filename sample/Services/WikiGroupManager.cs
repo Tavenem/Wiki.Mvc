@@ -1,6 +1,4 @@
-﻿using Tavenem.Wiki.Web;
-
-namespace Tavenem.Wiki.Mvc.Sample.Services;
+﻿namespace Tavenem.Wiki.Mvc.Sample.Services;
 
 /// <summary>
 /// An implementation of <see cref="IWikiGroupManager"/> which never returns results.

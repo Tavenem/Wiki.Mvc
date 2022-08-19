@@ -1,5 +1,4 @@
 ﻿using Tavenem.DataStorage;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc.Sample.Data;
 
@@ -7,7 +6,6 @@ public static class Seed
 {
     public static async Task AddDefaultWikiPagesAsync(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         string adminId)
     {
@@ -27,25 +25,25 @@ public static class Seed
             _ = await GetDefaultMainAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
         }
 
-        if (!string.IsNullOrEmpty(wikiWebOptions.AboutPageTitle))
+        if (!string.IsNullOrEmpty(wikiOptions.AboutPageTitle))
         {
             var aboutReference = await PageReference
-                .GetPageReferenceAsync(dataStore, wikiWebOptions.AboutPageTitle, wikiWebOptions.SystemNamespace)
+                .GetPageReferenceAsync(dataStore, wikiOptions.AboutPageTitle, wikiOptions.SystemNamespace)
                 .ConfigureAwait(false);
             if (aboutReference is null)
             {
-                _ = await GetDefaultAboutAsync(wikiOptions, wikiWebOptions, dataStore, adminId).ConfigureAwait(false);
+                _ = await GetDefaultAboutAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
             }
         }
 
-        if (!string.IsNullOrEmpty(wikiWebOptions.HelpPageTitle))
+        if (!string.IsNullOrEmpty(wikiOptions.HelpPageTitle))
         {
             var helpReference = await PageReference
-                .GetPageReferenceAsync(dataStore, wikiWebOptions.HelpPageTitle, wikiWebOptions.SystemNamespace)
+                .GetPageReferenceAsync(dataStore, wikiOptions.HelpPageTitle, wikiOptions.SystemNamespace)
                 .ConfigureAwait(false);
             if (helpReference is null)
             {
-                _ = await GetDefaultHelpAsync(wikiOptions, wikiWebOptions, dataStore, adminId).ConfigureAwait(false);
+                _ = await GetDefaultHelpAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
             }
         }
 
@@ -70,12 +68,11 @@ public static class Seed
 
     private static Task<Article> GetDefaultAboutAsync(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
             dataStore,
-            wikiWebOptions.AboutPageTitle ?? "About",
+            wikiOptions.AboutPageTitle ?? "About",
             adminId,
 @$"{{{{Welcome}}}}
 
@@ -88,18 +85,17 @@ The ""reference"" implementation included out-of-the-box ([Tavenem.Wiki.Mvc](htt
 See the [[System:Help|]] page for usage information.
 
 [[{wikiOptions.CategoryNamespace}:System pages]]",
-            wikiWebOptions.SystemNamespace,
+            wikiOptions.SystemNamespace,
             adminId,
             new[] { adminId });
 
     private static Task<Article> GetDefaultHelpAsync(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
             dataStore,
-            wikiWebOptions.HelpPageTitle ?? "Help",
+            wikiOptions.HelpPageTitle ?? "Help",
             adminId,
 @"{{Welcome}}
 
@@ -115,7 +111,7 @@ The `Tavenem.Wiki.Mvc` package contains a sample/default implementation of `Tave
 
 [[" + wikiOptions.CategoryNamespace + @":System pages]]
 [[" + wikiOptions.CategoryNamespace + ":Help pages]]",
-            wikiWebOptions.SystemNamespace,
+            wikiOptions.SystemNamespace,
             adminId,
             new[] { adminId });
 

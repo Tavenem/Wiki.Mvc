@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc;
 
@@ -208,7 +207,6 @@ public class WikiRouteData
     /// </summary>
     public WikiRouteData(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IWikiMvcOptions wikiMvcOptions,
         RouteData routeData,
         HttpRequest request)
@@ -246,7 +244,8 @@ public class WikiRouteData
 
         var separatorIndex = wN?.IndexOf(':') ?? -1;
         if (separatorIndex != -1
-            && wN!.Substring(0, separatorIndex).Equals(wikiOptions.TalkNamespace, StringComparison.OrdinalIgnoreCase))
+            && wN![..separatorIndex]
+                .Equals(wikiOptions.TalkNamespace, StringComparison.OrdinalIgnoreCase))
         {
             wN = wN[(separatorIndex + 1)..];
             IsTalk = true;
@@ -264,10 +263,10 @@ public class WikiRouteData
             : wikiOptions.MainPageTitle;
 
         IsCategory = !defaultNamespace && string.Equals(WikiNamespace, wikiOptions.CategoryNamespace, StringComparison.OrdinalIgnoreCase);
-        IsSystem = !defaultNamespace && !IsCategory && string.Equals(WikiNamespace, wikiWebOptions.SystemNamespace, StringComparison.OrdinalIgnoreCase);
+        IsSystem = !defaultNamespace && !IsCategory && string.Equals(WikiNamespace, wikiOptions.SystemNamespace, StringComparison.OrdinalIgnoreCase);
         IsFile = !defaultNamespace && !IsCategory && !IsSystem && string.Equals(WikiNamespace, wikiOptions.FileNamespace, StringComparison.OrdinalIgnoreCase);
-        IsUserPage = !defaultNamespace && !IsCategory && !IsSystem && !IsFile && string.Equals(WikiNamespace, wikiWebOptions.UserNamespace, StringComparison.OrdinalIgnoreCase);
-        IsGroupPage = !defaultNamespace && !IsCategory && !IsSystem && !IsFile && !IsUserPage && string.Equals(WikiNamespace, wikiWebOptions.GroupNamespace, StringComparison.OrdinalIgnoreCase);
+        IsUserPage = !defaultNamespace && !IsCategory && !IsSystem && !IsFile && string.Equals(WikiNamespace, wikiOptions.UserNamespace, StringComparison.OrdinalIgnoreCase);
+        IsGroupPage = !defaultNamespace && !IsCategory && !IsSystem && !IsFile && !IsUserPage && string.Equals(WikiNamespace, wikiOptions.GroupNamespace, StringComparison.OrdinalIgnoreCase);
 
         if (request.Query.TryGetValue("rev", out var rev)
             && rev.Count >= 1)

@@ -45,7 +45,7 @@ else if (Model is not null)
                     @foreach (var item in group)
                     {
                         <li class="wiki-category-article">
-                            <a href="@(Model.Data.IsCompact ? $"/Compact/{WikiOptions.WikiLinkPrefix}/{WikiOptions.CategoryNamespace}:{item.Title}" : $"/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}")">@item.FullTitle</a>
+                            <a href="@(Model.Data.IsCompact ? $"/Compact/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}" : $"/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}")">@item.FullTitle</a>
                         </li>
                     }
                 </ul>

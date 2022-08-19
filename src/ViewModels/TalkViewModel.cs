@@ -1,4 +1,4 @@
-﻿using Tavenem.Wiki.Web.SignalR;
+﻿using Tavenem.Wiki.Mvc.SignalR;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 

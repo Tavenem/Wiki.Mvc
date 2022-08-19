@@ -1,5 +1,4 @@
 ﻿using Tavenem.DataStorage;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 
@@ -13,10 +12,10 @@ public record UserViewModel(string Id, bool PageExists, string UserName)
     /// </summary>
     public UserViewModel(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         IWikiUser user) : this(
             user.Id,
-            Article.GetArticle(wikiOptions, dataStore, user.Id, wikiWebOptions.UserNamespace) is not null,
-            user.UserName) { }
+            Article.GetArticle(wikiOptions, dataStore, user.Id, wikiOptions.UserNamespace) is not null,
+            user.UserName)
+    { }
 }

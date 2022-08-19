@@ -1,6 +1,5 @@
 ﻿@model SearchViewModel
 @inject IWikiOptions WikiOptions
-@inject IWikiWebOptions WikiWebOptions
 @{
     ViewData["Title"] = "Search";
 }
@@ -8,7 +7,7 @@
 @if (Model is not null)
 {
     <div class="wiki-search-form">
-        <form asp-controller="Wiki" asp-route-wikiNamespace="@(WikiWebOptions.SystemNamespace)" asp-route-title="Search" asp-action="Search" method="get">
+        <form asp-controller="Wiki" asp-route-wikiNamespace="@(WikiOptions.SystemNamespace)" asp-route-title="Search" asp-action="Search" method="get">
             <input type="hidden" name="pageNumber" value="@Model.SearchResult.SearchHits.PageNumber" />
             <input type="hidden" name="pageSize" value="@Model.SearchResult.SearchHits.PageSize" />
             <div class="wiki-search-basic">

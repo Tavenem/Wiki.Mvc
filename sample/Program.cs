@@ -4,7 +4,6 @@ using Tavenem.Wiki;
 using Tavenem.Wiki.Mvc;
 using Tavenem.Wiki.Mvc.Sample.Data;
 using Tavenem.Wiki.Mvc.Sample.Services;
-using Tavenem.Wiki.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,13 +19,10 @@ builder.Services.AddWiki(
     typeof(WikiGroupManager),
     new WikiOptions
     {
-        LinkTemplate = WikiMvcOptions.DefaultLinkTemplate,
-    },
-    new WikiWebOptions
-    {
         ContactPageTitle = null,
         ContentsPageTitle = null,
         CopyrightPageTitle = null,
+        LinkTemplate = WikiMvcOptions.DefaultLinkTemplate,
         MaxFileSize = 0,
         PolicyPageTitle = null,
     },
@@ -43,7 +39,6 @@ var app = builder.Build();
 var serviceProvider = app.Services.CreateScope().ServiceProvider;
 Seed.AddDefaultWikiPagesAsync(
     serviceProvider.GetRequiredService<IWikiOptions>(),
-    serviceProvider.GetRequiredService<IWikiWebOptions>(),
     serviceProvider.GetRequiredService<IDataStore>(),
     WikiUserManager.UserId)
     .GetAwaiter()

@@ -2,7 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using Tavenem.DataStorage;
 using Tavenem.Wiki.MarkdownExtensions.Transclusions;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 
@@ -41,7 +40,6 @@ public record EditViewModel
     [Display(Name = "Leave a redirect behind")]
     bool Redirect = true)
 {
-
     /// <summary>
     /// The ID of the item.
     /// </summary>

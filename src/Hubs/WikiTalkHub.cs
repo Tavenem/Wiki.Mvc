@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Tavenem.DataStorage;
-using Tavenem.Wiki.Web;
-using Tavenem.Wiki.Web.SignalR;
+using Tavenem.Wiki.Mvc.SignalR;
 
 namespace Tavenem.Wiki.Mvc.Hubs;
 
@@ -16,7 +15,6 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
     private readonly IDataStore _dataStore;
     private readonly IWikiUserManager _userManager;
     private readonly IWikiOptions _wikiOptions;
-    private readonly IWikiWebOptions _wikiWebOptions;
 
     /// <summary>
     /// <para>
@@ -30,13 +28,11 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
     public WikiTalkHub(
         IDataStore dataStore,
         IWikiUserManager userManager,
-        IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions)
+        IWikiOptions wikiOptions)
     {
         _dataStore = dataStore;
         _userManager = userManager;
         _wikiOptions = wikiOptions;
-        _wikiWebOptions = wikiWebOptions;
     }
 
     /// <summary>
@@ -138,7 +134,7 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
 
         if (!string.IsNullOrWhiteSpace(html))
         {
-            var senderPage = Article.GetArticle(_wikiOptions, _dataStore, user.Id, _wikiWebOptions.UserNamespace);
+            var senderPage = Article.GetArticle(_wikiOptions, _dataStore, user.Id, _wikiOptions.UserNamespace);
 
             await Clients
                 .Group(reply.TopicId)

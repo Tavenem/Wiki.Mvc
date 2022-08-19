@@ -1,5 +1,4 @@
 ﻿@inject IWikiOptions WikiOptions
-@inject IWikiWebOptions WikiWebOptions
 @{
     var data = ViewData[nameof(WikiRouteData)] as WikiRouteData
         ?? new WikiRouteData();
@@ -16,33 +15,33 @@
             <div class="wiki-sidebar-section">
                 <ul>
                     <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.MainPageTitle" class="wiki-link wiki-link-exists" title="Visit the main page">@WikiOptions.MainPageTitle</a></li>
-                    @if (!string.IsNullOrWhiteSpace(WikiWebOptions.ContentsPageTitle))
+                    @if (!string.IsNullOrWhiteSpace(WikiOptions.ContentsPageTitle))
                     {
-                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.ContentsPageTitle" class="wiki-link wiki-link-exists" title="Visit the main contents page">@WikiWebOptions.ContentsPageTitle</a></li>
+                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.ContentsPageTitle" class="wiki-link wiki-link-exists" title="Visit the main contents page">@WikiOptions.ContentsPageTitle</a></li>
                     }
-                    @if (!string.IsNullOrWhiteSpace(WikiWebOptions.HelpPageTitle))
+                    @if (!string.IsNullOrWhiteSpace(WikiOptions.HelpPageTitle))
                     {
-                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.HelpPageTitle" class="wiki-link wiki-link-exists" title="Visit the main help page">@WikiWebOptions.HelpPageTitle</a></li>
+                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.HelpPageTitle" class="wiki-link wiki-link-exists" title="Visit the main help page">@WikiOptions.HelpPageTitle</a></li>
                     }
-                    @if (!string.IsNullOrWhiteSpace(WikiWebOptions.AboutPageTitle))
+                    @if (!string.IsNullOrWhiteSpace(WikiOptions.AboutPageTitle))
                     {
-                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.AboutPageTitle" class="wiki-link wiki-link-exists" title="Learn about this site">@WikiWebOptions.AboutPageTitle</a></li>
+                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.AboutPageTitle" class="wiki-link wiki-link-exists" title="Learn about this site">@WikiOptions.AboutPageTitle</a></li>
                     }
-                    @if (!string.IsNullOrWhiteSpace(WikiWebOptions.ContactPageTitle))
+                    @if (!string.IsNullOrWhiteSpace(WikiOptions.ContactPageTitle))
                     {
-                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.ContactPageTitle" class="wiki-link wiki-link-exists" title="Contact the site administrators">@WikiWebOptions.ContactPageTitle</a></li>
+                        <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.ContactPageTitle" class="wiki-link wiki-link-exists" title="Contact the site administrators">@WikiOptions.ContactPageTitle</a></li>
                     }
                 </ul>
             </div>
             <div class="wiki-sidebar-section">
                 <ul>
-                    <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:All_Pages?sort=timestamp&descending=true" class="wiki-link wiki-link-exists" title="A list of recent revisions">Recent changes</a></li>
+                    <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:All_Pages?sort=timestamp&descending=true" class="wiki-link wiki-link-exists" title="A list of recent revisions">Recent changes</a></li>
                     @if (!data.IsSystem)
                     {
                         <li><a href="@Url.Action("WhatLinksHere")" class="wiki-link wiki-link-exists" title="A list of articles with links to this one">What links here</a></li>
                     }
-                    <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:Upload" class="wiki-link wiki-link-exists">Upload files</a></li>
-                    <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:Special" class="wiki-link wiki-link-exists" title="A list of all special pages">Special pages</a></li>
+                    <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:Upload" class="wiki-link wiki-link-exists">Upload files</a></li>
+                    <li><a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:Special" class="wiki-link wiki-link-exists" title="A list of all special pages">Special pages</a></li>
                 </ul>
             </div>
         </nav>
@@ -142,7 +141,7 @@
                     }
                     <div class="wiki-header-search">
                         <form method="get"
-                              action="@($"/{WikiOptions.WikiLinkPrefix}/{WikiWebOptions.SystemNamespace}:Search/Search")">
+                              action="@($"/{WikiOptions.WikiLinkPrefix}/{WikiOptions.SystemNamespace}:Search/Search")">
                             <input id="wiki-search-input"
                                    type="search"
                                    role="search"
@@ -264,17 +263,17 @@
                         {
                             <li class="wiki-footer-timestamp">This page was last edited <span class="wiki-timestamp">@tArticle.Timestamp.ToWikiDisplayString()</span> (UTC).</li>
                         }
-                        @if (!string.IsNullOrWhiteSpace(WikiWebOptions.CopyrightPageTitle)
-                         || !string.IsNullOrWhiteSpace(WikiWebOptions.PolicyPageTitle))
+                        @if (!string.IsNullOrWhiteSpace(WikiOptions.CopyrightPageTitle)
+                         || !string.IsNullOrWhiteSpace(WikiOptions.PolicyPageTitle))
                         {
                             <li class="wiki-footer-copyright">
-                                @if (!string.IsNullOrWhiteSpace(WikiWebOptions.CopyrightPageTitle))
+                                @if (!string.IsNullOrWhiteSpace(WikiOptions.CopyrightPageTitle))
                                 {
-                                    <span>The content of this page is available under the terms of the site's <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.CopyrightPageTitle">copyright policy</a>.</span>
+                                    <span>The content of this page is available under the terms of the site's <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.CopyrightPageTitle">copyright policy</a>.</span>
                                 }
-                                @if (!string.IsNullOrWhiteSpace(WikiWebOptions.PolicyPageTitle))
+                                @if (!string.IsNullOrWhiteSpace(WikiOptions.PolicyPageTitle))
                                 {
-                                    <span>By using this site, you agree to the site's <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.PolicyPageTitle">policies</a>.</span>
+                                    <span>By using this site, you agree to the site's <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.PolicyPageTitle">policies</a>.</span>
                                 }
                             </li>
                         }
@@ -282,7 +281,7 @@
                 </div>
                 <div class="wiki-bottom-footer">
                     <span>Developed by <a href="//williamstead.com" target="_blank">William Stead</a></span>
-                    <span>ver 0.1.0 &copy; 2019&ndash;@(DateTime.Now.Year) <a href="//tavenem.com" target="_blank">Tavenem</a></span>
+                    <span>ver 0.4.0 &copy; 2019&ndash;@(DateTime.Now.Year) <a href="//tavenem.com" target="_blank">Tavenem</a></span>
                 </div>
             </footer>
         }

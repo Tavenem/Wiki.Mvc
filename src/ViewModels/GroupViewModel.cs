@@ -1,5 +1,4 @@
 ﻿using Tavenem.DataStorage;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 
@@ -27,7 +26,6 @@ public record GroupViewModel : WikiItemViewModel
     /// </summary>
     public static async Task<GroupViewModel> NewAsync(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         IWikiGroupManager groupManager,
         WikiRouteData data,
@@ -43,6 +41,6 @@ public record GroupViewModel : WikiItemViewModel
             data,
             vm.Html,
             vm.IsDiff,
-            users.Select(x => new UserViewModel(wikiOptions, wikiWebOptions, dataStore, x)));
+            users.Select(x => new UserViewModel(wikiOptions, dataStore, x)));
     }
 }

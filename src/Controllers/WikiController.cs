@@ -4,15 +4,13 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
-using System.Net;
 using System.Text;
 using Tavenem.DataStorage;
 using Tavenem.Wiki.Mvc.Hubs;
 using Tavenem.Wiki.Mvc.Models;
 using Tavenem.Wiki.Mvc.Services.Search;
+using Tavenem.Wiki.Mvc.SignalR;
 using Tavenem.Wiki.Mvc.ViewModels;
-using Tavenem.Wiki.Web;
-using Tavenem.Wiki.Web.SignalR;
 
 namespace Tavenem.Wiki.Mvc.Controllers;
 
@@ -29,7 +27,6 @@ public class WikiController : Controller
     private readonly ISearchClient _searchClient;
     private readonly IWikiUserManager _userManager;
     private readonly IWikiOptions _wikiOptions;
-    private readonly IWikiWebOptions _wikiWebOptions;
     private readonly IWikiMvcOptions _wikiMvcOptions;
 
     /// <summary>
@@ -44,7 +41,6 @@ public class WikiController : Controller
         ISearchClient searchClient,
         IWikiUserManager userManager,
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IWikiMvcOptions wikiMvcOptions)
     {
         _dataStore = dataStore;
@@ -55,7 +51,6 @@ public class WikiController : Controller
         _searchClient = searchClient;
         _userManager = userManager;
         _wikiOptions = wikiOptions;
-        _wikiWebOptions = wikiWebOptions;
         _wikiMvcOptions = wikiMvcOptions;
     }
 
@@ -97,7 +92,7 @@ public class WikiController : Controller
                 return View("NotAuthorized", data);
             }
             else if (!user.IsWikiAdmin
-                && _wikiWebOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
+                && _wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
             {
                 return View("NotAuthorized", data);
             }
@@ -205,7 +200,7 @@ public class WikiController : Controller
                 return View("NotAuthorized", data);
             }
             else if (!user.IsWikiAdmin
-                && _wikiWebOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
+                && _wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
             {
                 return View("NotAuthorized", data);
             }
@@ -522,7 +517,7 @@ public class WikiController : Controller
             return Json(string.Empty);
         }
 
-        if (!string.IsNullOrEmpty(article.Owner) && !(article.AllowedViewers is null))
+        if (!string.IsNullOrEmpty(article.Owner) && article.AllowedViewers is not null)
         {
             if (User is null)
             {
@@ -580,7 +575,7 @@ public class WikiController : Controller
             data.CanEdit = user is not null
                 && !_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase))
                 && (user.IsWikiAdmin
-                || !_wikiWebOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
+                || !_wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
             return View("NoContent", data);
         }
 
@@ -595,7 +590,6 @@ public class WikiController : Controller
 
         var vm = await HistoryViewModel.NewAsync(
             _wikiOptions,
-            _wikiWebOptions,
             _dataStore,
             _userManager,
             data,
@@ -633,7 +627,7 @@ public class WikiController : Controller
             data.CanEdit = user is not null
                 && !_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase))
                 && (user.IsWikiAdmin
-                || !_wikiWebOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
+                || !_wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
             if (!data.IsCategory)
             {
                 return View("NoContent", data);
@@ -704,12 +698,9 @@ public class WikiController : Controller
                         }
                         else
                         {
-                            if (replyUser is null)
-                            {
-                                replyUser = await _userManager.FindByIdAsync(reply.SenderId).ConfigureAwait(false);
-                            }
+                            replyUser ??= await _userManager.FindByIdAsync(reply.SenderId).ConfigureAwait(false);
                             pageExists = replyUser?.IsDeleted == false
-                                && Article.GetArticle(_wikiOptions, _dataStore, replyUser.Id, _wikiWebOptions.UserNamespace) is not null;
+                                && Article.GetArticle(_wikiOptions, _dataStore, replyUser.Id, _wikiOptions.UserNamespace) is not null;
                         }
                         senderPages.Add(reply.SenderId, pageExists);
                     }
@@ -736,7 +727,7 @@ public class WikiController : Controller
         else if (data.IsGroupPage)
         {
             var groupModel = await GroupViewModel
-                .NewAsync(_wikiOptions, _wikiWebOptions, _dataStore, _groupManager, data, model)
+                .NewAsync(_wikiOptions, _dataStore, _groupManager, data, model)
                 .ConfigureAwait(false);
             return View("Group", groupModel);
         }
@@ -827,7 +818,7 @@ public class WikiController : Controller
             return RedirectToAction("Search", new
             {
                 isTalk = false,
-                wikiNamespace = _wikiWebOptions.SystemNamespace,
+                wikiNamespace = _wikiOptions.SystemNamespace,
                 title = "Search",
                 query = original,
                 pageNumber,
@@ -860,7 +851,7 @@ public class WikiController : Controller
             {
                 return View(new SearchViewModel(new SearchResult()));
             }
-            owner = string.Join(';', normalizedNamespaces);
+            searchNamespace = string.Join(';', normalizedNamespaces);
         }
 
         var result = await _searchClient.SearchAsync(new SearchRequest
@@ -870,7 +861,7 @@ public class WikiController : Controller
             PageSize = pageSize,
             Query = query,
             Sort = sort,
-            WikiNamespace = searchNamespace?.ToWikiTitleCase(),
+            WikiNamespace = searchNamespace,
             Owner = owner,
         }, user).ConfigureAwait(false);
 
@@ -1076,7 +1067,7 @@ public class WikiController : Controller
                 return View("NotAuthorized", data);
             }
             else if (!user.IsWikiAdmin
-                && _wikiWebOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
+                && _wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
             {
                 return View("NotAuthorized", data);
             }
@@ -1145,7 +1136,7 @@ public class WikiController : Controller
         }
 
         var size = fileInfo.Length / 1000;
-        if (size > _wikiWebOptions.MaxFileSize || (limit > 0 && size > limit))
+        if (size > _wikiOptions.MaxFileSize || (limit > 0 && size > limit))
         {
             return View("NotAuthorizedForUploadSize");
         }
@@ -1352,12 +1343,12 @@ public class WikiController : Controller
             return Unauthorized();
         }
 
-        if (file.Length == 0 || file.Length > _wikiWebOptions.MaxFileSize)
+        if (file.Length == 0 || file.Length > _wikiOptions.MaxFileSize)
         {
             return BadRequest();
         }
 
-        if (file.Length > _wikiWebOptions.MaxFileSize
+        if (file.Length > _wikiOptions.MaxFileSize
             || (limit > 0 && file.Length / 1000 > limit))
         {
             return Unauthorized();
@@ -1641,7 +1632,7 @@ public class WikiController : Controller
                 data.CanEdit = user is not null
                     && !_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase))
                     && (user.IsWikiAdmin
-                    || !_wikiWebOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
+                    || !_wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
             }
             else
             {
@@ -1659,7 +1650,7 @@ public class WikiController : Controller
             ViewData["Title"] = type.ToString().Replace('_', ' ');
         }
         var vm = await SpecialListViewModel
-            .NewAsync(_wikiOptions, _wikiWebOptions, _dataStore, data, type, pageNumber, pageSize, sort, descending, filter)
+            .NewAsync(_wikiOptions, _dataStore, data, type, pageNumber, pageSize, sort, descending, filter)
             .ConfigureAwait(false);
         return View("WikiItemList", vm);
     }
@@ -1735,7 +1726,7 @@ public class WikiController : Controller
 
     private WikiRouteData GetWikiRouteData()
     {
-        var data = new WikiRouteData(_wikiOptions, _wikiWebOptions, _wikiMvcOptions, ControllerContext.RouteData, HttpContext.Request);
+        var data = new WikiRouteData(_wikiOptions, _wikiMvcOptions, ControllerContext.RouteData, HttpContext.Request);
         ViewData[nameof(WikiRouteData)] = data;
         ViewData["Title"] = Article.GetFullTitle(_wikiOptions, data.Title, data.WikiNamespace, data.IsTalk);
         return data;

@@ -1,26 +1,25 @@
 ﻿@model EditViewModel
 @inject IWikiOptions WikiOptions
-@inject IWikiWebOptions WikiWebOptions
 
-@if (!string.IsNullOrEmpty(WikiWebOptions.PolicyPageTitle))
+@if (!string.IsNullOrEmpty(WikiOptions.PolicyPageTitle))
 {
-    if (!string.IsNullOrEmpty(WikiWebOptions.CopyrightPageTitle))
+    if (!string.IsNullOrEmpty(WikiOptions.CopyrightPageTitle))
     {
         <div class="wiki-edit-terms-notice">
-            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.PolicyPageTitle">policies</a>, including but not limited to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.CopyrightPageTitle">copyright policy</a>.</p>
+            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.PolicyPageTitle">policies</a>, including but not limited to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.CopyrightPageTitle">copyright policy</a>.</p>
         </div>
     }
     else
     {
         <div class="wiki-edit-terms-notice">
-            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.PolicyPageTitle">policies</a>.</p>
+            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.PolicyPageTitle">policies</a>.</p>
         </div>
     }
 }
-else if (!string.IsNullOrEmpty(WikiWebOptions.CopyrightPageTitle))
+else if (!string.IsNullOrEmpty(WikiOptions.CopyrightPageTitle))
 {
     <div class="wiki-edit-terms-notice">
-        <p>Content submitted to this wiki is subject to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.CopyrightPageTitle">copyright policy</a>.</p>
+        <p>Content submitted to this wiki is subject to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.CopyrightPageTitle">copyright policy</a>.</p>
     </div>
 }
 else
@@ -89,25 +88,25 @@ else
                 <label asp-for="ViewerSelf" onclick="window.wikimvceditor.toggleViewerSelf(event);" onkeydown="window.wikimvceditor.toggleViewerSelf(event);">Make me the only viewer</label>
             </div>
             <div class="form-group wiki-edit-terms-notice">
-                @if (!string.IsNullOrEmpty(WikiWebOptions.PolicyPageTitle))
+                @if (!string.IsNullOrEmpty(WikiOptions.PolicyPageTitle))
                 {
-                    if (!string.IsNullOrEmpty(WikiWebOptions.CopyrightPageTitle))
+                    if (!string.IsNullOrEmpty(WikiOptions.CopyrightPageTitle))
                     {
                         <div class="wiki-edit-terms-notice">
-                            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.PolicyPageTitle">policies</a>, including but not limited to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.CopyrightPageTitle">copyright policy</a>.</p>
+                            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.PolicyPageTitle">policies</a>, including but not limited to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.CopyrightPageTitle">copyright policy</a>.</p>
                         </div>
                     }
                     else
                     {
                         <div class="wiki-edit-terms-notice">
-                            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.PolicyPageTitle">policies</a>.</p>
+                            <p>Content submitted to this wiki is subject to each of its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.PolicyPageTitle">policies</a>.</p>
                         </div>
                     }
                 }
-                else if (!string.IsNullOrEmpty(WikiWebOptions.CopyrightPageTitle))
+                else if (!string.IsNullOrEmpty(WikiOptions.CopyrightPageTitle))
                 {
                     <div class="wiki-edit-terms-notice">
-                        <p>Content submitted to this wiki is subject to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiWebOptions.SystemNamespace:@WikiWebOptions.CopyrightPageTitle">copyright policy</a>.</p>
+                        <p>Content submitted to this wiki is subject to its <a href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.SystemNamespace:@WikiOptions.CopyrightPageTitle">copyright policy</a>.</p>
                     </div>
                 }
                 else

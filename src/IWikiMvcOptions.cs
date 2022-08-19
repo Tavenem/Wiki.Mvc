@@ -88,7 +88,7 @@ public interface IWikiMvcOptions
 
     /// <summary>
     /// <para>
-    /// The relative URL of the <see cref="Web.SignalR.IWikiTalkHub"/>.
+    /// The relative URL of the <see cref="SignalR.IWikiTalkHub"/>.
     /// </para>
     /// <para>
     /// If omitted, the path "/wikiTalkHub" will be used.

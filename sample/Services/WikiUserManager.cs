@@ -1,5 +1,4 @@
-﻿using Tavenem.Wiki.Web;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 
 namespace Tavenem.Wiki.Mvc.Sample.Services;
 

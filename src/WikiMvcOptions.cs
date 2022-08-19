@@ -6,7 +6,7 @@
 public class WikiMvcOptions : IWikiMvcOptions
 {
     /// <summary>
-    /// The relative URL of the <see cref="Web.SignalR.IWikiTalkHub"/> used if <see
+    /// The relative URL of the <see cref="SignalR.IWikiTalkHub"/> used if <see
     /// cref="TalkHubRoute"/> is not provided.
     /// </summary>
     public const string DefaultLayoutPath = "/Views/Wiki/_DefaultWikiMainLayout.cshtml";
@@ -17,7 +17,7 @@ public class WikiMvcOptions : IWikiMvcOptions
     public const string DefaultLinkTemplate = "onmousemove=\"wikimvc.showPreview(event, '{LINK}');\" onmouseleave=\"wikimvc.hidePreview();\"";
 
     /// <summary>
-    /// The relative URL of the <see cref="Web.SignalR.IWikiTalkHub"/> used if <see
+    /// The relative URL of the <see cref="SignalR.IWikiTalkHub"/> used if <see
     /// cref="TalkHubRoute"/> is not provided.
     /// </summary>
     public const string DefaultTalkHubRoute = "/wikiTalkHub";
@@ -124,7 +124,7 @@ public class WikiMvcOptions : IWikiMvcOptions
 
     /// <summary>
     /// <para>
-    /// The relative URL of the <see cref="Web.SignalR.IWikiTalkHub"/>.
+    /// The relative URL of the <see cref="SignalR.IWikiTalkHub"/>.
     /// </para>
     /// <para>
     /// If omitted, <see cref="DefaultTalkHubRoute"/> is used.

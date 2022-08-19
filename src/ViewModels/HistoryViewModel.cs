@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using Tavenem.DataStorage;
-using Tavenem.Wiki.Web;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 
@@ -14,7 +13,6 @@ public record HistoryViewModel(WikiRouteData Data, IPagedList<RevisionViewModel>
     /// </summary>
     public static async Task<HistoryViewModel> NewAsync(
         IWikiOptions wikiOptions,
-        IWikiWebOptions wikiWebOptions,
         IDataStore dataStore,
         IWikiUserManager userManager,
         WikiRouteData data,
@@ -45,7 +43,7 @@ public record HistoryViewModel(WikiRouteData Data, IPagedList<RevisionViewModel>
         foreach (var item in history)
         {
             list.Add(await RevisionViewModel
-                .NewAsync(wikiOptions, wikiWebOptions, dataStore, userManager, item)
+                .NewAsync(wikiOptions, dataStore, userManager, item)
                 .ConfigureAwait(false));
         }
         return new HistoryViewModel(
