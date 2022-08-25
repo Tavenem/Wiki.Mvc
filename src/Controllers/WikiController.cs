@@ -638,7 +638,7 @@ public class WikiController : Controller
                 editor,
                 start?.UtcTicks,
                 end?.UtcTicks),
-            user?.Id);
+            user);
         data.CanEdit = history?.Revisions?.TotalCount > 0
             ? history?.Permission.HasFlag(WikiPermission.Write) == true
             : history?.Permission.HasFlag(WikiPermission.Create) == true;
@@ -695,7 +695,7 @@ public class WikiController : Controller
                     _userManager,
                     _groupManager,
                     data.Title,
-                    user?.Id);
+                    user);
                 return View("Category", categoryInfo);
             }
             else if (data.IsGroupPage)
@@ -705,7 +705,7 @@ public class WikiController : Controller
                     _userManager,
                     _groupManager,
                     data.Title,
-                    user?.Id);
+                    user);
                 return View("Group", groupInfo);
             }
         }
@@ -721,7 +721,7 @@ public class WikiController : Controller
                 data.RequestedTimestamp.Value,
                 data.Title,
                 data.WikiNamespace,
-                user?.Id);
+                user);
         }
         else if (data.RequestedDiffPrevious)
         {
@@ -732,7 +732,7 @@ public class WikiController : Controller
                 data.RequestedTimestamp,
                 data.Title,
                 data.WikiNamespace,
-                user?.Id);
+                user);
         }
         else if (data.RequestedDiffTimestamp.HasValue)
         {
@@ -745,7 +745,7 @@ public class WikiController : Controller
                     data.RequestedDiffTimestamp.Value,
                     data.Title,
                     data.WikiNamespace,
-                    user?.Id)
+                    user)
                 : await _dataStore.GetWikiItemDiffWithCurrentAsync(
                     _wikiOptions,
                     _userManager,
@@ -753,7 +753,7 @@ public class WikiController : Controller
                     data.RequestedDiffTimestamp.Value,
                     data.Title,
                     data.WikiNamespace,
-                    user?.Id);
+                    user);
         }
         else if (data.RequestedTimestamp.HasValue)
         {
@@ -764,7 +764,7 @@ public class WikiController : Controller
                 data.RequestedTimestamp.Value,
                 data.Title,
                 data.WikiNamespace,
-                user?.Id);
+                user);
         }
         else
         {
@@ -774,7 +774,7 @@ public class WikiController : Controller
                 _groupManager,
                 data.Title,
                 data.WikiNamespace,
-                user?.Id);
+                user);
         }
         data.CanEdit = wikiItem?.Permission.HasFlag(WikiPermission.Write) == true;
         if (wikiItem?.Item?.IsDeleted != false
