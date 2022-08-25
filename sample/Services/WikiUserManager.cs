@@ -8,10 +8,9 @@ namespace Tavenem.Wiki.Mvc.Sample.Services;
 public class WikiUserManager : IWikiUserManager
 {
     public const string UserId = "A478AF94-44AF-4F21-AD65-71B77B9A569A";
-    private static readonly WikiUser _User = new("User")
+    private static readonly WikiUser _User = new()
     {
-        Email = "example@example.com",
-        EmailConfirmed = true,
+        DisplayName = "User",
         Id = UserId,
         IsWikiAdmin = true,
     };

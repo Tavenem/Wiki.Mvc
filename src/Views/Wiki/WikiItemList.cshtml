@@ -1,5 +1,5 @@
 ﻿@model SpecialListViewModel
-@inject IWikiOptions WikiOptions
+@inject WikiOptions WikiOptions
 
 @if (Model is not null)
 {
@@ -48,185 +48,112 @@
         </form>
     </div>
     <div class="wiki-pagecontrols">
-        @if (Model.MissingItems is null)
-        {
-            <nav>
-                @if (Model.Items.HasPreviousPage)
-                {
-                    <span><a asp-route-pageNumber="1">First</a></span>
-                    <span><a asp-route-pageNumber="@(Model.Items.PageNumber - 1)">Previous</a></span>
-                }
-                else
-                {
-                    <span>First</span>
-                    <span>Previous</span>
-                }
-                @if (Model.Items.HasNextPage)
-                {
-                    <span><a asp-route-pageNumber="@(Model.Items.PageNumber + 1)">Next</a></span>
-                    <span><a asp-route-pageNumber="@Model.Items.TotalPages">Last</a></span>
-                }
-                else
-                {
-                    <span>Next</span>
-                    <span>Last</span>
-                }
-            </nav>
-            <div>
-                <span>Number of items per page:</span>
-                <ul>
-                    <li>
-                        @if (Model.Items.PageSize == 50)
-                        {
-                            <span>50</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="50">50</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.Items.PageSize == 100)
-                        {
-                            <span>100</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="100">100</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.Items.PageSize == 250)
-                        {
-                            <span>250</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="250">250</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.Items.PageSize == 500)
-                        {
-                            <span>500</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="500">500</a>
-                        }
-                    </li>
-                </ul>
-            </div>
-        }
-        else
-        {
-            <nav>
-                @if (Model.MissingItems.HasPreviousPage)
-                {
-                    <span><a asp-route-pageNumber="1">First</a></span>
-                    <span><a asp-route-pageNumber="@(Model.MissingItems.PageNumber - 1)">Previous</a></span>
-                }
-                else
-                {
-                    <span>First</span>
-                    <span>Previous</span>
-                }
-                @if (Model.MissingItems.HasNextPage)
-                {
-                    <span><a asp-route-pageNumber="@(Model.MissingItems.PageNumber + 1)">Next</a></span>
-                    <span><a asp-route-pageNumber="@Model.MissingItems.TotalPages">Last</a></span>
-                }
-                else
-                {
-                    <span>Next</span>
-                    <span>Last</span>
-                }
-            </nav>
-            <div>
-                <span>Number of items per page:</span>
-                <ul>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 50)
-                        {
-                            <span>50</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="50">50</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 100)
-                        {
-                            <span>100</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="100">100</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 250)
-                        {
-                            <span>250</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="250">250</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 500)
-                        {
-                            <span>500</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="500">500</a>
-                        }
-                    </li>
-                </ul>
-            </div>
-        }
+        <nav>
+            @if (Model.Links.HasPreviousPage)
+            {
+                <span><a asp-route-pageNumber="1">First</a></span>
+                <span><a asp-route-pageNumber="@(Model.Links.PageNumber - 1)">Previous</a></span>
+            }
+            else
+            {
+                <span>First</span>
+                <span>Previous</span>
+            }
+            @if (Model.Links.HasNextPage)
+            {
+                <span><a asp-route-pageNumber="@(Model.Links.PageNumber + 1)">Next</a></span>
+                <span><a asp-route-pageNumber="@Model.Links.TotalPages">Last</a></span>
+            }
+            else
+            {
+                <span>Next</span>
+                <span>Last</span>
+            }
+        </nav>
+        <div>
+            <span>Number of items per page:</span>
+            <ul>
+                <li>
+                    @if (Model.Links.PageSize == 50)
+                    {
+                        <span>50</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="50">50</a>
+                    }
+                </li>
+                <li>
+                    @if (Model.Links.PageSize == 100)
+                    {
+                        <span>100</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="100">100</a>
+                    }
+                </li>
+                <li>
+                    @if (Model.Links.PageSize == 250)
+                    {
+                        <span>250</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="250">250</a>
+                    }
+                </li>
+                <li>
+                    @if (Model.Links.PageSize == 500)
+                    {
+                        <span>500</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="500">500</a>
+                    }
+                </li>
+            </ul>
+        </div>
     </div>
-    @if (Model.Items.Count > 0 || Model.MissingItems?.Count > 0)
+    @if (Model.Links.Count > 0)
     {
         <div class="wiki-list-articles">
             <ul>
-                @if (Model.MissingItems is null)
+                @if (Model.Type == SpecialListType.Missing_Pages)
                 {
-                    foreach (var item in Model.Items)
+                    foreach (var item in Model.Links)
                     {
                         <li>
-                            <a href="@($"/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}")" class="wiki-link wiki-link-exists">
+                            <a href="@WikiOptions.GetWikiPageUrl(item.Title, item.WikiNamespace)" class="wiki-link wiki-link-missing">
                                 @if (!string.Equals(item.WikiNamespace, WikiOptions.DefaultNamespace, StringComparison.OrdinalIgnoreCase))
                                 {
                                     <span class="wiki-link-namespace">@item.WikiNamespace</span>
                                 }
                                 <span class="wiki-link-title">@item.Title</span>
-                                @if (item is Category category)
-                                {
-                                    <span class="wiki-link-details">(@category.ChildIds.Count.ToString("N0") members)</span>
-                                }
-                                else if (item is WikiFile file)
-                                {
-                                    <span class="wiki-link-details">(file size: @(WikiFile.GetFileSizeString(file.FileSize)), MIME type: @file.FileType)</span>
-                                }
                             </a>
                         </li>
                     }
                 }
                 else
                 {
-                    foreach (var item in Model.MissingItems)
+                    foreach (var item in Model.Links)
                     {
                         <li>
-                            <a href="@($"/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}")" class="wiki-link wiki-link-missing">
+                            <a href="@WikiOptions.GetWikiPageUrl(item.Title, item.WikiNamespace)" class="wiki-link wiki-link-exists">
                                 @if (!string.Equals(item.WikiNamespace, WikiOptions.DefaultNamespace, StringComparison.OrdinalIgnoreCase))
                                 {
                                     <span class="wiki-link-namespace">@item.WikiNamespace</span>
                                 }
                                 <span class="wiki-link-title">@item.Title</span>
+                                @if (item.ChildCount > 0)
+                                {
+                                    <span class="wiki-link-details">(@item.ChildCount.ToString("N0") members)</span>
+                                }
+                                else if (item.FileSize > 0)
+                                {
+                                    <span class="wiki-link-details">(file size: @(WikiFile.GetFileSizeString(item.FileSize)), MIME type: @(item.FileType ?? "unknown"))</span>
+                                }
                             </a>
                         </li>
                     }
@@ -235,145 +162,72 @@
         </div>
     }
     <div class="wiki-pagecontrols">
-        @if (Model.MissingItems is null)
-        {
-            <nav>
-                @if (Model.Items.HasPreviousPage)
-                {
-                    <span><a asp-route-pageNumber="1">First</a></span>
-                    <span><a asp-route-pageNumber="@(Model.Items.PageNumber - 1)">Previous</a></span>
-                }
-                else
-                {
-                    <span>First</span>
-                    <span>Previous</span>
-                }
-                @if (Model.Items.HasNextPage)
-                {
-                    <span><a asp-route-pageNumber="@(Model.Items.PageNumber + 1)">Next</a></span>
-                    <span><a asp-route-pageNumber="@Model.Items.TotalPages">Last</a></span>
-                }
-                else
-                {
-                    <span>Next</span>
-                    <span>Last</span>
-                }
-            </nav>
-            <div>
-                <span>Number of items per page:</span>
-                <ul>
-                    <li>
-                        @if (Model.Items.PageSize == 50)
-                        {
-                            <span>50</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="50">50</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.Items.PageSize == 100)
-                        {
-                            <span>100</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="100">100</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.Items.PageSize == 250)
-                        {
-                            <span>250</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="250">250</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.Items.PageSize == 500)
-                        {
-                            <span>500</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="500">500</a>
-                        }
-                    </li>
-                </ul>
-            </div>
-        }
-        else
-        {
-            <nav>
-                @if (Model.MissingItems.HasPreviousPage)
-                {
-                    <span><a asp-route-pageNumber="1">First</a></span>
-                    <span><a asp-route-pageNumber="@(Model.MissingItems.PageNumber - 1)">Previous</a></span>
-                }
-                else
-                {
-                    <span>First</span>
-                    <span>Previous</span>
-                }
-                @if (Model.MissingItems.HasNextPage)
-                {
-                    <span><a asp-route-pageNumber="@(Model.MissingItems.PageNumber + 1)">Next</a></span>
-                    <span><a asp-route-pageNumber="@Model.MissingItems.TotalPages">Last</a></span>
-                }
-                else
-                {
-                    <span>Next</span>
-                    <span>Last</span>
-                }
-            </nav>
-            <div>
-                <span>Number of items per page:</span>
-                <ul>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 50)
-                        {
-                            <span>50</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="50">50</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 100)
-                        {
-                            <span>100</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="100">100</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 250)
-                        {
-                            <span>250</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="250">250</a>
-                        }
-                    </li>
-                    <li>
-                        @if (Model.MissingItems.PageSize == 500)
-                        {
-                            <span>500</span>
-                        }
-                        else
-                        {
-                            <a asp-route-pageSize="500">500</a>
-                        }
-                    </li>
-                </ul>
-            </div>
-        }
+        <nav>
+            @if (Model.Links.HasPreviousPage)
+            {
+                <span><a asp-route-pageNumber="1">First</a></span>
+                <span><a asp-route-pageNumber="@(Model.Links.PageNumber - 1)">Previous</a></span>
+            }
+            else
+            {
+                <span>First</span>
+                <span>Previous</span>
+            }
+            @if (Model.Links.HasNextPage)
+            {
+                <span><a asp-route-pageNumber="@(Model.Links.PageNumber + 1)">Next</a></span>
+                <span><a asp-route-pageNumber="@Model.Links.TotalPages">Last</a></span>
+            }
+            else
+            {
+                <span>Next</span>
+                <span>Last</span>
+            }
+        </nav>
+        <div>
+            <span>Number of items per page:</span>
+            <ul>
+                <li>
+                    @if (Model.Links.PageSize == 50)
+                    {
+                        <span>50</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="50">50</a>
+                    }
+                </li>
+                <li>
+                    @if (Model.Links.PageSize == 100)
+                    {
+                        <span>100</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="100">100</a>
+                    }
+                </li>
+                <li>
+                    @if (Model.Links.PageSize == 250)
+                    {
+                        <span>250</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="250">250</a>
+                    }
+                </li>
+                <li>
+                    @if (Model.Links.PageSize == 500)
+                    {
+                        <span>500</span>
+                    }
+                    else
+                    {
+                        <a asp-route-pageSize="500">500</a>
+                    }
+                </li>
+            </ul>
+        </div>
     </div>
 }

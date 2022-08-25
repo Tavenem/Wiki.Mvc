@@ -14,7 +14,7 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
 
     private readonly IDataStore _dataStore;
     private readonly IWikiUserManager _userManager;
-    private readonly IWikiOptions _wikiOptions;
+    private readonly WikiOptions _wikiOptions;
 
     /// <summary>
     /// <para>
@@ -28,7 +28,7 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
     public WikiTalkHub(
         IDataStore dataStore,
         IWikiUserManager userManager,
-        IWikiOptions wikiOptions)
+        WikiOptions wikiOptions)
     {
         _dataStore = dataStore;
         _userManager = userManager;
@@ -101,7 +101,7 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
                 reply.TopicId,
                 user.Id,
                 user.IsWikiAdmin,
-                user.UserName,
+                user.DisplayName ?? user.Id,
                 reply.Markdown,
                 reply.MessageId)
             .ConfigureAwait(false);
@@ -115,7 +115,11 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
                 && !link.Missing
                 && !string.IsNullOrEmpty(link.WikiNamespace))
             {
-                var article = Article.GetArticle(_wikiOptions, _dataStore, link.Title, link.WikiNamespace);
+                var article = await Article.GetArticleAsync(
+                    _wikiOptions,
+                    _dataStore,
+                    link.Title,
+                    link.WikiNamespace);
                 if (article?.IsDeleted == false)
                 {
                     preview = true;
@@ -134,7 +138,11 @@ public class WikiTalkHub : Hub<IWikiTalkClient>, IWikiTalkHub
 
         if (!string.IsNullOrWhiteSpace(html))
         {
-            var senderPage = Article.GetArticle(_wikiOptions, _dataStore, user.Id, _wikiOptions.UserNamespace);
+            var senderPage = await Article.GetArticleAsync(
+                _wikiOptions,
+                _dataStore,
+                user.Id,
+                _wikiOptions.UserNamespace);
 
             await Clients
                 .Group(reply.TopicId)

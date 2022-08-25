@@ -5,7 +5,7 @@ namespace Tavenem.Wiki.Mvc.Sample.Data;
 public static class Seed
 {
     public static async Task AddDefaultWikiPagesAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         string adminId)
     {
@@ -55,7 +55,7 @@ public static class Seed
             _ = await GetDefaultMVCAsync(wikiOptions, dataStore, adminId).ConfigureAwait(false);
         }
 
-        var category = Category.GetCategory(wikiOptions, dataStore, "System pages");
+        var category = await Category.GetCategoryAsync(wikiOptions, dataStore, "System pages");
         if (category is null)
         {
             throw new Exception("Failed to create category during article creation");
@@ -67,7 +67,7 @@ public static class Seed
     }
 
     private static Task<Article> GetDefaultAboutAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
@@ -90,7 +90,7 @@ See the [[System:Help|]] page for usage information.
             new[] { adminId });
 
     private static Task<Article> GetDefaultHelpAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
@@ -116,7 +116,7 @@ The `Tavenem.Wiki.Mvc` package contains a sample/default implementation of `Tave
             new[] { adminId });
 
     private static Task<Article> GetDefaultMainAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
@@ -133,7 +133,7 @@ See the [[System:About|]] page or the [[System:Help|]] page for more information
             new[] { adminId });
 
     private static Task<Article> GetDefaultMVCAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
@@ -150,7 +150,7 @@ The [Tavenem.Wiki.Mvc](https://github.com/Tavenem/Wiki.Mvc) package contains a s
             new[] { adminId });
 
     private static Task<Article> GetDefaultWelcomeAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         string adminId) => Article.NewAsync(
             wikiOptions,
@@ -165,7 +165,7 @@ The [Tavenem.Wiki.Mvc](https://github.com/Tavenem/Wiki.Mvc) package contains a s
             new[] { adminId });
 
     private static Task SetDefaultCategoryAsync(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IDataStore dataStore,
         Category category,
         string adminId) => category.ReviseAsync(

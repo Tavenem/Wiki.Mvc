@@ -49,7 +49,7 @@ public static class WikiEndpointRouteBuilderExtensions
         this IServiceCollection services,
         IWikiUserManager userManager,
         IWikiGroupManager groupManager,
-        IWikiOptions? wikiOptions = null,
+        WikiOptions? wikiOptions = null,
         IWikiMvcOptions? wikiMvcOptions = null,
         IFileManager? fileManager = null,
         ISearchClient? searchClient = null)
@@ -60,7 +60,7 @@ public static class WikiEndpointRouteBuilderExtensions
         }
         else
         {
-            services.AddScoped<IWikiOptions>(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
+            services.AddScoped(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
         }
         if (wikiMvcOptions is not null)
         {
@@ -95,6 +95,8 @@ public static class WikiEndpointRouteBuilderExtensions
         {
             services.AddScoped(_ => searchClient);
         }
+
+        services.AddScoped(_ => new WikiViewState());
     }
 
     /// <summary>
@@ -134,7 +136,7 @@ public static class WikiEndpointRouteBuilderExtensions
         this IServiceCollection services,
         Type userManagerType,
         Type groupManagerType,
-        IWikiOptions? wikiOptions = null,
+        WikiOptions? wikiOptions = null,
         IWikiMvcOptions? wikiMvcOptions = null,
         Type? fileManagerType = null,
         Type? searchClientType = null)
@@ -145,7 +147,7 @@ public static class WikiEndpointRouteBuilderExtensions
         }
         else
         {
-            services.AddScoped<IWikiOptions>(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
+            services.AddScoped(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
         }
         if (wikiMvcOptions is not null)
         {
@@ -177,6 +179,8 @@ public static class WikiEndpointRouteBuilderExtensions
         {
             services.AddScoped(typeof(ISearchClient), searchClientType);
         }
+
+        services.AddScoped(_ => new WikiViewState());
     }
 
     /// <summary>
@@ -216,7 +220,7 @@ public static class WikiEndpointRouteBuilderExtensions
         this IServiceCollection services,
         Func<IServiceProvider, IWikiUserManager> userManagerBuilder,
         Func<IServiceProvider, IWikiGroupManager> groupManagerBuilder,
-        IWikiOptions? wikiOptions = null,
+        WikiOptions? wikiOptions = null,
         IWikiMvcOptions? wikiMvcOptions = null,
         Func<IServiceProvider, IFileManager>? fileManagerBuilder = null,
         Func<IServiceProvider, ISearchClient>? searchClientBuilder = null)
@@ -227,7 +231,7 @@ public static class WikiEndpointRouteBuilderExtensions
         }
         else
         {
-            services.AddScoped<IWikiOptions>(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
+            services.AddScoped(_ => new WikiOptions { LinkTemplate = WikiMvcOptions.DefaultLinkTemplate });
         }
         if (wikiMvcOptions is not null)
         {
@@ -259,6 +263,8 @@ public static class WikiEndpointRouteBuilderExtensions
         {
             services.AddScoped(searchClientBuilder);
         }
+
+        services.AddScoped(_ => new WikiViewState());
     }
 
     /// <summary>
@@ -294,7 +300,7 @@ public static class WikiEndpointRouteBuilderExtensions
         this IServiceCollection services,
         IWikiUserManager userManager,
         IWikiGroupManager groupManager,
-        Func<IServiceProvider, IWikiOptions> wikiOptionsBuilder,
+        Func<IServiceProvider, WikiOptions> wikiOptionsBuilder,
         Func<IServiceProvider, IWikiMvcOptions> wikiMvcOptionsBuilder,
         IFileManager? fileManager = null,
         ISearchClient? searchClient = null)
@@ -325,6 +331,8 @@ public static class WikiEndpointRouteBuilderExtensions
         {
             services.AddScoped(_ => searchClient);
         }
+
+        services.AddScoped(_ => new WikiViewState());
     }
 
     /// <summary>
@@ -364,7 +372,7 @@ public static class WikiEndpointRouteBuilderExtensions
         this IServiceCollection services,
         Type userManagerType,
         Type groupManagerType,
-        Func<IServiceProvider, IWikiOptions> wikiOptionsBuilder,
+        Func<IServiceProvider, WikiOptions> wikiOptionsBuilder,
         Func<IServiceProvider, IWikiMvcOptions> wikiMvcOptionsBuilder,
         Type? fileManagerType = null,
         Type? searchClientType = null)
@@ -392,6 +400,8 @@ public static class WikiEndpointRouteBuilderExtensions
         {
             services.AddScoped(typeof(ISearchClient), searchClientType);
         }
+
+        services.AddScoped(_ => new WikiViewState());
     }
 
     /// <summary>
@@ -431,7 +441,7 @@ public static class WikiEndpointRouteBuilderExtensions
         this IServiceCollection services,
         Func<IServiceProvider, IWikiUserManager> userManagerBuilder,
         Func<IServiceProvider, IWikiGroupManager> groupManagerBuilder,
-        Func<IServiceProvider, IWikiOptions> wikiOptionsBuilder,
+        Func<IServiceProvider, WikiOptions> wikiOptionsBuilder,
         Func<IServiceProvider, IWikiMvcOptions> wikiMvcOptionsBuilder,
         Func<IServiceProvider, IFileManager>? fileManagerBuilder = null,
         Func<IServiceProvider, ISearchClient>? searchClientBuilder = null)
@@ -459,6 +469,8 @@ public static class WikiEndpointRouteBuilderExtensions
         {
             services.AddScoped(searchClientBuilder);
         }
+
+        services.AddScoped(_ => new WikiViewState());
     }
 
     /// <summary>
@@ -466,7 +478,7 @@ public static class WikiEndpointRouteBuilderExtensions
     /// Adds endpoints for the Tavenem.Wiki library.
     /// </para>
     /// <para>
-    /// Should be added after setting <see cref="IWikiOptions.MainPageTitle"/>, if a custom
+    /// Should be added after setting <see cref="WikiOptions.MainPageTitle"/>, if a custom
     /// value is to be set.
     /// </para>
     /// <para>
@@ -478,7 +490,7 @@ public static class WikiEndpointRouteBuilderExtensions
     public static void MapWiki(this IEndpointRouteBuilder endpoints)
     {
         var provider = endpoints.ServiceProvider.CreateScope().ServiceProvider;
-        var options = provider.GetRequiredService<IWikiOptions>();
+        var options = provider.GetRequiredService<WikiOptions>();
         var mvcOptions = provider.GetRequiredService<IWikiMvcOptions>();
 
         endpoints.MapHub<WikiTalkHub>(mvcOptions?.TalkHubRoute ?? WikiMvcOptions.DefaultTalkHubRoute);

@@ -80,15 +80,6 @@ public class WikiMvcOptions : IWikiMvcOptions
     public int? CompactRoutePort { get; set; }
 
     /// <summary>
-    /// A function which determines whether the given user may create a new article in the
-    /// given namespace.
-    /// </summary>
-    /// <remarks>
-    /// Not invoked for admin users, who always have permission.
-    /// </remarks>
-    public Func<IWikiUser, string, bool>? CreatePermission { get; set; }
-
-    /// <summary>
     /// <para>
     /// The relative path to the site's login page.
     /// </para>
@@ -161,25 +152,4 @@ public class WikiMvcOptions : IWikiMvcOptions
     /// The name or path of a partial view.
     /// </returns>
     public string? GetArticleFrontMatter(Article article) => ArticleFrontMatter?.Invoke(article);
-
-    /// <summary>
-    /// <para>
-    /// Determines whether the given <paramref name="user"/> has permission to create an
-    /// article in the given namespace.
-    /// </para>
-    /// <para>
-    /// Invokes <see cref="CreatePermission"/> if it exists; returns <see langword="true"/> if
-    /// it does not.
-    /// </para>
-    /// </summary>
-    /// <param name="user">The user attempting to create a new article.</param>
-    /// <param name="wikiNamespace">The namespace of the new article.</param>
-    /// <returns>
-    /// <see langword="true"/> if the <paramref name="user"/> may create the article; otherwise
-    /// <see langword="false"/>.
-    /// </returns>
-    /// <remarks>
-    /// Not called for admin users, who always have permission.
-    /// </remarks>
-    public bool GetCreatePermission(IWikiUser user, string wikiNamespace) => CreatePermission?.Invoke(user, wikiNamespace) ?? true;
 }

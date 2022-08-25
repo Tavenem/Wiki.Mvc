@@ -50,7 +50,7 @@ public record EditViewModel
     /// Initialize a new instance of <see cref="EditViewModel"/>.
     /// </summary>
     public EditViewModel(
-        IWikiOptions options,
+        WikiOptions options,
         WikiRouteData data,
         IWikiUser user,
         string markdown,
@@ -83,7 +83,7 @@ public record EditViewModel
     /// Get a new <see cref="EditViewModel"/>.
     /// </summary>
     public static async Task<EditViewModel> NewAsync(
-        IWikiOptions options,
+        WikiOptions options,
         IDataStore dataStore,
         IWikiUserManager userManager,
         IWikiGroupManager groupManager,
@@ -115,7 +115,12 @@ public record EditViewModel
                 : MarkdownItem.RenderHtml(
                     options,
                     dataStore,
-                    TransclusionParser.Transclude(options, dataStore, title, fullTitle, markdown, out _));
+                    await TransclusionParser.TranscludeAsync(
+                        options,
+                        dataStore,
+                        title,
+                        fullTitle,
+                        markdown));
         }
 
         string? allowedEditors = null;
@@ -131,9 +136,13 @@ public record EditViewModel
                     {
                         editors.Add(editorId);
                     }
+                    else if (string.IsNullOrEmpty(group.DisplayName))
+                    {
+                        editors.Add($"[Group: {group.Id}]");
+                    }
                     else
                     {
-                        editors.Add($"{group.GroupName} [Group: {group.Id}]");
+                        editors.Add($"{group.DisplayName} [Group: {group.Id}]");
                     }
                 }
                 else
@@ -143,9 +152,13 @@ public record EditViewModel
                     {
                         editors.Add(editorId);
                     }
+                    else if (string.IsNullOrEmpty(editor.DisplayName))
+                    {
+                        editors.Add($"[{editor.Id}]");
+                    }
                     else
                     {
-                        editors.Add($"{editor.UserName} [{editor.Id}]");
+                        editors.Add($"{editor.DisplayName} [{editor.Id}]");
                     }
                 }
             }
@@ -165,9 +178,13 @@ public record EditViewModel
                     {
                         viewers.Add(viewerId);
                     }
+                    else if (string.IsNullOrEmpty(group.DisplayName))
+                    {
+                        viewers.Add($"[Group: {group.Id}]");
+                    }
                     else
                     {
-                        viewers.Add($"{group.GroupName} [Group: {group.Id}]");
+                        viewers.Add($"{group.DisplayName} [Group: {group.Id}]");
                     }
                 }
                 else
@@ -177,9 +194,13 @@ public record EditViewModel
                     {
                         viewers.Add(viewerId);
                     }
+                    else if (string.IsNullOrEmpty(viewer.DisplayName))
+                    {
+                        viewers.Add($"[{viewer.Id}]");
+                    }
                     else
                     {
-                        viewers.Add($"{viewer.UserName} [{viewer.Id}]");
+                        viewers.Add($"{viewer.DisplayName} [{viewer.Id}]");
                     }
                 }
             }

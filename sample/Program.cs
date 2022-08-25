@@ -38,7 +38,7 @@ var app = builder.Build();
 
 var serviceProvider = app.Services.CreateScope().ServiceProvider;
 Seed.AddDefaultWikiPagesAsync(
-    serviceProvider.GetRequiredService<IWikiOptions>(),
+    serviceProvider.GetRequiredService<WikiOptions>(),
     serviceProvider.GetRequiredService<IDataStore>(),
     WikiUserManager.UserId)
     .GetAwaiter()

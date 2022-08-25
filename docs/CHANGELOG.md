@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.6.0-preview
+### Changed
+- Update to the new Tavenem.Wiki version
+
 ## 0.5.0-preview
 ### Changed
-- Move SignalR features from deprecated `Tavenem.Wiki.Web` project into this one.
+- Move SignalR features from deprecated `Tavenem.Wiki.Web` project into this one
 
 ## 0.4.0-preview
 ### Changed

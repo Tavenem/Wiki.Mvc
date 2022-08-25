@@ -12,7 +12,7 @@ public class SearchHit : ISearchHit
 
     /// <summary>
     /// Gets the full title of this item (including namespace if the namespace is not
-    /// <see cref="IWikiOptions.DefaultNamespace"/>).
+    /// <see cref="WikiOptions.DefaultNamespace"/>).
     /// </summary>
     public string FullTitle { get; set; }
 

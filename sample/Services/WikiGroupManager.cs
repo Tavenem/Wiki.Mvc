@@ -14,7 +14,7 @@ public class WikiGroupManager : IWikiGroupManager
     /// group matching the specified <paramref name="groupId" /> if it exists.
     /// </returns>
     public ValueTask<IWikiGroup?> FindByIdAsync(string? groupId)
-        => new((IWikiGroup?)null);
+        => ValueTask.FromResult((IWikiGroup?)null);
 
     /// <summary>
     /// <para>
@@ -31,7 +31,42 @@ public class WikiGroupManager : IWikiGroupManager
     /// group matching the specified <paramref name="groupName" /> if it exists.
     /// </returns>
     public ValueTask<IWikiGroup?> FindByNameAsync(string? groupName)
-        => new((IWikiGroup?)null);
+        => ValueTask.FromResult((IWikiGroup?)null);
+
+    /// <summary>
+    /// Returns the wiki user who is the owner of the group with the given ID.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="ValueTask{TResult}" /> that represents the result of the asynchronous query, an
+    /// <see cref="IWikiUser" /> whose <see cref="IWikiOwner.Id" /> matches the <see
+    /// cref="IWikiGroup.OwnerId" /> of the group with the given ID; or <see langword="null" /> if
+    /// no such group or user exists.
+    /// </returns>
+    public ValueTask<IWikiUser?> GetGroupOwnerAsync(string? groupId)
+        => ValueTask.FromResult((IWikiUser?)null);
+
+    /// <summary>
+    /// Returns the wiki user who is the owner of the given <paramref name="group" />.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="ValueTask{TResult}" /> that represents the result of the asynchronous query, an
+    /// <see cref="IWikiUser" /> whose <see cref="IWikiOwner.Id" /> matches the <see
+    /// cref="IWikiGroup.OwnerId" /> of the given <paramref name="group" />; or <see langword="null"
+    /// /> if no such group or user exists.
+    /// </returns>
+    public ValueTask<IWikiUser?> GetGroupOwnerAsync(IWikiGroup? group)
+        => ValueTask.FromResult((IWikiUser?)null);
+
+    /// <summary>
+    /// Returns the ID of the wiki user who is the owner of the group with the given ID.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="ValueTask{TResult}" /> that represents the result of the asynchronous query, a
+    /// <see cref="string" /> containing the <see cref="IWikiGroup.OwnerId" /> of the group with the
+    /// given ID; or <see langword="null" /> if no such group exists.
+    /// </returns>
+    public ValueTask<string?> GetGroupOwnerIdAsync(string? groupId)
+        => ValueTask.FromResult((string?)null);
 
     /// <summary>
     /// Returns a list of all wiki users in the group with the given ID.
@@ -56,6 +91,36 @@ public class WikiGroupManager : IWikiGroupManager
         => new(new List<IWikiUser>());
 
     /// <summary>
+    /// Determines if the given <paramref name="user" /> is the owner of the group with the given
+    /// ID.
+    /// </summary>
+    /// <param name="groupId">The group ID to search for.</param>
+    /// <param name="user">The user to check.</param>
+    /// <returns>
+    /// The <see cref="ValueTask" /> that represents the asynchronous operation, containing <see
+    /// langword="true" /> if the given <paramref name="user" /> is the owner of the group with the
+    /// given ID, and <see langword="false" /> if no such group or user exists, or if the user is
+    /// not the owner of the group.
+    /// </returns>
+    public ValueTask<bool> UserIsGroupOwner(string? groupId, IWikiUser? user)
+        => ValueTask.FromResult(false);
+
+    /// <summary>
+    /// Determines if the given <paramref name="user" /> is the owner of the given <paramref
+    /// name="group" />.
+    /// </summary>
+    /// <param name="group">The group to check.</param>
+    /// <param name="user">The user to check.</param>
+    /// <returns>
+    /// The <see cref="ValueTask" /> that represents the asynchronous operation, containing <see
+    /// langword="true" /> if the given <paramref name="user" /> is the owner of the given <paramref
+    /// name="group" />, and <see langword="false" /> if no such group or user exists, or if the
+    /// user is not the owner of the group.
+    /// </returns>
+    public ValueTask<bool> UserIsGroupOwner(IWikiGroup? group, IWikiUser? user)
+        => ValueTask.FromResult(false);
+
+    /// <summary>
     /// Determines if a user with the given ID is in the group with the given ID.
     /// </summary>
     /// <param name="groupId">The group ID to search for.</param>
@@ -67,7 +132,7 @@ public class WikiGroupManager : IWikiGroupManager
     /// to the group.
     /// </returns>
     public ValueTask<bool> UserIsInGroup(string? groupId, string? userId)
-        => new(false);
+        => ValueTask.FromResult(false);
 
     /// <summary>
     /// Determines if a user with the given ID is in the given <paramref name="group" />.
@@ -81,7 +146,7 @@ public class WikiGroupManager : IWikiGroupManager
     /// not belong to the group.
     /// </returns>
     public ValueTask<bool> UserIsInGroup(IWikiGroup? group, string? userId)
-        => new(false);
+        => ValueTask.FromResult(false);
 
     /// <summary>
     /// Determines if the given <paramref name="user" /> is in the group with the given ID.
@@ -95,7 +160,7 @@ public class WikiGroupManager : IWikiGroupManager
     /// not belong to the group.
     /// </returns>
     public ValueTask<bool> UserIsInGroup(string? groupId, IWikiUser? user)
-        => new(false);
+        => ValueTask.FromResult(false);
 
     /// <summary>
     /// Determines if the given <paramref name="user" /> is in the given <paramref name="group"
@@ -110,7 +175,7 @@ public class WikiGroupManager : IWikiGroupManager
     /// user does not belong to the group.
     /// </returns>
     public ValueTask<bool> UserIsInGroup(IWikiGroup? group, IWikiUser? user)
-        => new(false);
+        => ValueTask.FromResult(false);
 
     /// <summary>
     /// Determines the maximum upload limit of a user with the given ID.
@@ -122,7 +187,7 @@ public class WikiGroupManager : IWikiGroupManager
     /// "greater" than any positive value, since it indicates no limit). Returns zero if no such
     /// user exists.
     /// </returns>
-    public ValueTask<int> UserMaxUploadLimit(string? userId) => new(0);
+    public ValueTask<int> UserMaxUploadLimit(string? userId) => ValueTask.FromResult(0);
 
     /// <summary>
     /// Determines if the given <paramref name="user"/> is in any group with upload permission.
@@ -134,5 +199,5 @@ public class WikiGroupManager : IWikiGroupManager
     /// is "greater" than any positive value, since it indicates no limit). Returns zero if no
     /// such user exists.
     /// </returns>
-    public ValueTask<int> UserMaxUploadLimit(IWikiUser? user) => new(0);
+    public ValueTask<int> UserMaxUploadLimit(IWikiUser? user) => ValueTask.FromResult(0);
 }

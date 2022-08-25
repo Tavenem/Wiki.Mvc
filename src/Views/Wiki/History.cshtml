@@ -1,7 +1,7 @@
 ﻿@model HistoryViewModel
-@inject IWikiOptions WikiOptions
+@inject WikiOptions WikiOptions
 
-@if ((Model?.Revisions.Count ?? 0) == 0)
+@if ((Model?.Revisions?.Count ?? 0) == 0)
 {
     <div class="wiki-history-nocontent">
         <p>No revisions match the current filter.</p>
@@ -73,7 +73,7 @@ else
     <div class="wiki-pagecontrols">
         <nav>
             <ul class="pagination">
-                @if (Model?.Revisions.HasPreviousPage == true)
+                @if (Model?.Revisions?.HasPreviousPage == true)
                 {
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="1">Newest</a></li>
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="@(Model.Revisions.PageNumber - 1)">Newer</a></li>
@@ -83,7 +83,7 @@ else
                     <li class="page-item">Newest</li>
                     <li class="page-item">Newer</li>
                 }
-                @if (Model?.Revisions.HasNextPage == true)
+                @if (Model?.Revisions?.HasNextPage == true)
                 {
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="@(Model.Revisions.PageNumber + 1)">Older</a></li>
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="@(Model.Revisions.TotalPages)">Oldest</a></li>
@@ -99,7 +99,7 @@ else
             <span>Number of revisions per page:</span>
             <ul class="pagination">
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 50)
+                    @if (Model?.Revisions is null || Model.Revisions.PageSize == 50)
                     {
                         <span>50</span>
                     }
@@ -109,7 +109,7 @@ else
                     }
                 </li>
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 100)
+                    @if (Model?.Revisions?.PageSize == 100)
                     {
                         <span>100</span>
                     }
@@ -119,7 +119,7 @@ else
                     }
                 </li>
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 250)
+                    @if (Model?.Revisions?.PageSize == 250)
                     {
                         <span>250</span>
                     }
@@ -129,7 +129,7 @@ else
                     }
                 </li>
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 500)
+                    @if (Model?.Revisions?.PageSize == 500)
                     {
                         <span>500</span>
                     }
@@ -141,100 +141,33 @@ else
             </ul>
         </div>
     </div>
-    @if (Model is not null)
+    @if (Model?.Revisions?.Count > 0)
     {
         <form class="wiki-history-list" asp-controller="Wiki" asp-action="Read" method="get">
             <input id="wiki-history-check1" type="hidden" name="rev" value="" />
             <input id="wiki-history-check2" type="hidden" name="diff" value="" />
-            @if (!Model.Data.IsFile)
+            @if (!Model.IsFile)
             {
                 <button type="submit" class="btn btn-outline-primary">Compare selected versions</button>
             }
             <ul>
-                <li>
-                    @if (!Model.Data.IsFile)
-                    {
-                        <span class="wiki-history-list-diffs">
-                            @if (Model.Revisions.HasPreviousPage)
-                            {
-                                <a asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[0].Revision.TimestampTicks" asp-route-diff="cur" title="Compare with the current version">cur</a>
-                            }
-                            else
-                            {
-                                <span>cur</span>
-                            }
-                            @if (Model.Revisions.Count > 1)
-                            {
-                                <a asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[0].Revision.TimestampTicks" asp-route-diff="prev" title="Compare with the previous version">prev</a>
-                            }
-                            else
-                            {
-                                <span>prev</span>
-                            }
-                        </span>
-                        <input type="checkbox"
-                               onclick="checkWikiDiff(event, @Model.Revisions[0].Revision.TimestampTicks);"
-                               onkeydown="checkWikiDiff(event, @Model.Revisions[0].Revision.TimestampTicks);" />
-                    }
-                    <a class="wiki-history-list-timestamp" asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[0].Revision.TimestampTicks">@Model.Revisions[0].Revision.Timestamp.ToWikiDisplayString()</a>
-                    @if (Model.Revisions[0].EditorExists)
-                    {
-                        <a class="wiki-username wiki-username-link wiki-history-list-editor @(Model.Revisions[0].EditorPageExists ? string.Empty : "wiki-link-missing")"
-                           href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[0].Revision.Editor)"
-                           title="Visit the user page for @(Model.Revisions[0].EditorName)">@Model.Revisions[0].EditorName</a>
-                    }
-                    else
-                    {
-                        <span class="wiki-username wiki-username-nolink wiki-history-list-editor"
-                              href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[0].Revision.Editor)">
-                            @Model.Revisions[0].EditorName
-                        </span>
-                    }
-                    <span>@Model.Revisions[0].Revision.Comment</span>
-                </li>
-                @for (var i = 1; i < Model.Revisions.Count - 2; i++)
+                @for (var i = 0; i < Model.Revisions.Count; i++)
                 {
                     <li>
-                        @if (!Model.Data.IsFile)
+                        @if (!Model.IsFile)
                         {
                             <span class="wiki-history-list-diffs">
-                                <a asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[i].Revision.TimestampTicks" asp-route-diff="cur" title="Compare with the current version">cur</a>
-                                <a asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[i].Revision.TimestampTicks" asp-route-diff="prev" title="Compare with the previous version">prev</a>
-                            </span>
-                            <input type="checkbox"
-                                   onclick="checkWikiDiff(event, @Model.Revisions[i].Revision.TimestampTicks);"
-                                   onkeydown="checkWikiDiff(event, @Model.Revisions[i].Revision.TimestampTicks);" />
-                        }
-                        <a class="wiki-history-list-timestamp"
-                           asp-route-wikiNamespace="@Model.Data.WikiNamespace"
-                           asp-route-title="@Model.Data.Title" asp-action="Read"
-                           asp-route-rev="@Model.Revisions[i].Revision.TimestampTicks">@Model.Revisions[i].Revision.Timestamp.ToWikiDisplayString()</a>
-                        @if (Model.Revisions[i].EditorExists)
-                        {
-                            <a class="wiki-username wiki-username-link wiki-history-list-editor @(Model.Revisions[i].EditorPageExists ? string.Empty : "wiki-link-missing")"
-                               href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[i].Revision.Editor)"
-                               title="Visit the user page for @(Model.Revisions[i].EditorName)">@Model.Revisions[i].EditorName</a>
-                        }
-                        else
-                        {
-                            <span class="wiki-username wiki-username-nolink wiki-history-list-editor"
-                                  href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[i].Revision.Editor)">
-                                @Model.Revisions[i].EditorName
-                            </span>
-                        }
-                        <span>@Model.Revisions[i].Revision.Comment</span>
-                    </li>
-                }
-                @if (Model.Revisions.Count > 1)
-                {
-                    <li>
-                        @if (!Model.Data.IsFile)
-                        {
-                            <span class="wiki-history-list-diffs">
-                                <a asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.TimestampTicks" asp-route-diff="cur" title="Compare with the current version">cur</a>
-                                @if (Model.Revisions.HasNextPage)
+                                @if (Model.Revisions.HasPreviousPage || i > 0)
                                 {
-                                    <a asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.TimestampTicks" asp-route-diff="prev" title="Compare with the previous version">prev</a>
+                                    <a asp-route-wikiNamespace="@Model.Revisions[i].Revision.WikiNamespace" asp-route-title="@Model.Revisions[i].Revision.Title" asp-action="Read" asp-route-rev="@Model.Revisions[i].Revision.TimestampTicks" asp-route-diff="cur" title="Compare with the current version">cur</a>
+                                }
+                                else
+                                {
+                                    <span>cur</span>
+                                }
+                                @if (i < Model.Revisions.Count - 1 || Model.Revisions.HasNextPage)
+                                {
+                                    <a asp-route-wikiNamespace="@Model.Revisions[i].Revision.WikiNamespace" asp-route-title="@Model.Revisions[i].Revision.Title" asp-action="Read" asp-route-rev="@Model.Revisions[i].Revision.TimestampTicks" asp-route-diff="prev" title="Compare with the previous version">prev</a>
                                 }
                                 else
                                 {
@@ -242,29 +175,31 @@ else
                                 }
                             </span>
                             <input type="checkbox"
-                                   onclick="checkWikiDiff(event, @Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.TimestampTicks);"
-                                   onkeydown="checkWikiDiff(event, @Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.TimestampTicks);" />
+                                   onclick="checkWikiDiff(event, @Model.Revisions[i].Revision.TimestampTicks);"
+                                   onkeydown="checkWikiDiff(event, @Model.Revisions[i].Revision.TimestampTicks);" />
                         }
-                        <a class="wiki-history-list-timestamp" asp-route-wikiNamespace="@Model.Data.WikiNamespace" asp-route-title="@Model.Data.Title" asp-action="Read" asp-route-rev="@Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.TimestampTicks">@Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.Timestamp.ToWikiDisplayString()</a>
-                        @if (Model.Revisions[(int)(Model.Revisions.Count - 1)].EditorExists)
+                        <a class="wiki-history-list-timestamp"
+                           asp-route-wikiNamespace="@Model.Revisions[i].Revision.WikiNamespace"
+                           asp-route-title="@Model.Revisions[i].Revision.Title" asp-action="Read"
+                           asp-route-rev="@Model.Revisions[i].Revision.TimestampTicks">@Model.Revisions[i].Revision.Timestamp.ToWikiDisplayString()</a>
+                        @if (Model.Revisions[i].Editor?.Entity is not null)
                         {
-                            <a class="wiki-username wiki-username-link wiki-history-list-editor @(Model.Revisions[(int)(Model.Revisions.Count - 1)].EditorPageExists ? string.Empty : "wiki-link-missing")"
-                               href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.Editor)"
-                               title="Visit the user page for @(Model.Revisions[(int)(Model.Revisions.Count - 1)].EditorName)">@Model.Revisions[(int)(Model.Revisions.Count - 1)].EditorName</a>
+                            <a class="wiki-username wiki-username-link wiki-history-list-editor @(Model.Revisions[i].Editor?.PageExists == true ? string.Empty : "wiki-link-missing")"
+                               href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[i].Editor)"
+                               title="Visit the user page for @(Model.Revisions[i].Editor!.Entity!.DisplayName ?? Model.Revisions[i].Revision.Editor)">@(Model.Revisions[i].Editor!.Entity!.DisplayName ?? Model.Revisions[i].Revision.Editor)</a>
                         }
                         else
                         {
                             <span class="wiki-username wiki-username-nolink wiki-history-list-editor"
-                                  href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[(int)(Model.Revisions.Count
-                                  - 1)].Revision.Editor)">
-                                @Model.Revisions[(int)(Model.Revisions.Count - 1)].EditorName
+                                  href="/@WikiOptions.WikiLinkPrefix/@WikiOptions.UserNamespace:@(Model.Revisions[i].Editor)">
+                                @Model.Revisions[i].Revision.Editor
                             </span>
                         }
-                        <span>@Model.Revisions[(int)(Model.Revisions.Count - 1)].Revision.Comment</span>
+                        <span>@Model.Revisions[i].Revision.Comment</span>
                     </li>
                 }
             </ul>
-            @if (!Model.Data.IsFile)
+            @if (!Model.IsFile)
             {
                 <button type="submit" class="btn btn-outline-primary">Compare selected versions</button>
             }
@@ -273,7 +208,7 @@ else
     <div class="wiki-pagecontrols">
         <nav>
             <ul class="pagination">
-                @if (Model?.Revisions.HasPreviousPage == true)
+                @if (Model?.Revisions?.HasPreviousPage == true)
                 {
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="1">Newest</a></li>
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="@(Model.Revisions.PageNumber - 1)">Newer</a></li>
@@ -283,7 +218,7 @@ else
                     <li class="page-item">Newest</li>
                     <li class="page-item">Newer</li>
                 }
-                @if (Model?.Revisions.HasNextPage == true)
+                @if (Model?.Revisions?.HasNextPage == true)
                 {
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="@(Model.Revisions.PageNumber + 1)">Older</a></li>
                     <li class="page-item"><a class="page-link" asp-route-pageNumber="@(Model.Revisions.TotalPages)">Oldest</a></li>
@@ -299,7 +234,7 @@ else
             <span>Number of revisions per page:</span>
             <ul class="pagination">
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 50)
+                    @if (Model?.Revisions is null || Model.Revisions.PageSize == 50)
                     {
                         <span>50</span>
                     }
@@ -309,7 +244,7 @@ else
                     }
                 </li>
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 100)
+                    @if (Model?.Revisions?.PageSize == 100)
                     {
                         <span>100</span>
                     }
@@ -319,7 +254,7 @@ else
                     }
                 </li>
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 250)
+                    @if (Model?.Revisions?.PageSize == 250)
                     {
                         <span>250</span>
                     }
@@ -329,7 +264,7 @@ else
                     }
                 </li>
                 <li class="page-item">
-                    @if (Model?.Revisions.PageSize == 500)
+                    @if (Model?.Revisions?.PageSize == 500)
                     {
                         <span>500</span>
                     }

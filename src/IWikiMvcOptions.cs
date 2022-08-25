@@ -125,19 +125,4 @@ public interface IWikiMvcOptions
     /// The name or path of a partial view.
     /// </returns>
     string? GetArticleFrontMatter(Article article);
-
-    /// <summary>
-    /// Determines whether the given <paramref name="user"/> has permission to create an
-    /// article in the given namespace.
-    /// </summary>
-    /// <param name="user">The user attempting to create a new article.</param>
-    /// <param name="wikiNamespace">The namespace of the new article.</param>
-    /// <returns>
-    /// <see langword="true"/> if the <paramref name="user"/> may create the article; otherwise
-    /// <see langword="false"/>.
-    /// </returns>
-    /// <remarks>
-    /// Not called for admin users, who always have permission.
-    /// </remarks>
-    bool GetCreatePermission(IWikiUser user, string wikiNamespace);
 }

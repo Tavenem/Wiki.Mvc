@@ -37,7 +37,7 @@ project, the following steps should be taken:
    will be a wrapper around your actual user group persistence mechanism. See the "complete" sample
    for an example implementation.
 
-   The next parameter is either an instance of `IWikiOptions` or a function which provides one.
+   The next parameter is either an instance of `WikiOptions` or a function which provides one.
    This interface allows you to configure the wiki's core features. See the README for
    [Tavenem.Wiki](https://github.com/Tavenem/Wiki) for more information.
    
@@ -70,10 +70,6 @@ project, the following steps should be taken:
      version of the wiki.
 
      If left null the compact view cannot be reached at a particular port.
-   - `CreatePermission`: A function which determines whether the given user may create a new
-     article in the given namespace.
-
-     Not invoked for admin users, who always have permission.
    - `LoginPath`: The relative path to the site's login page.
      
      For security reasons, only a local path is permitted. If your authentication mechanisms are

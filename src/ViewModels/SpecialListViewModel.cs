@@ -1,162 +1,44 @@
-﻿using System.Linq.Expressions;
-using System.Text;
+﻿using System.Text;
 using Tavenem.DataStorage;
-using Tavenem.Wiki.Mvc.Models;
+using Tavenem.Wiki.Queries;
 
 namespace Tavenem.Wiki.Mvc.ViewModels;
 
 /// <summary>
 /// The wiki page list DTO.
 /// </summary>
-public record SpecialListViewModel
-(
+public record SpecialListViewModel(
     WikiRouteData Data,
     SpecialListType Type,
     bool Descending,
-    IPagedList<Article> Items,
     string Description,
+    IPagedList<LinkInfo> Links,
     string? SecondaryDescription = null,
-    IPagedList<MissingPage>? MissingItems = null,
     string? Sort = null,
-    string? Filter = null
-)
+    string? Filter = null)
 {
     /// <summary>
     /// Initialize a new <see cref="SpecialListViewModel"/>.
     /// </summary>
     public SpecialListViewModel(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         WikiRouteData data,
         SpecialListType type,
         bool descending,
-        IPagedList<Article> items,
-        IPagedList<MissingPage>? missingItems = null,
+        IPagedList<LinkInfo> links,
         string? sort = null,
         string? filter = null) : this(
             data,
             type,
             descending,
-            items,
             GetDescription(wikiOptions, type, data),
+            links,
             GetSecondaryDescription(wikiOptions, type),
-            missingItems,
             sort,
             filter)
     { }
 
-    /// <summary>
-    /// Get a <see cref="SpecialListViewModel"/>.
-    /// </summary>
-    public static async Task<SpecialListViewModel> NewAsync(
-        IWikiOptions wikiOptions,
-        IDataStore dataStore,
-        WikiRouteData data,
-        SpecialListType type,
-        int pageNumber = 1,
-        int pageSize = 50,
-        string? sort = null,
-        bool descending = false,
-        string? filter = null)
-    {
-        var list = type switch
-        {
-            SpecialListType.All_Categories => await GetListAsync<Category>(dataStore, pageNumber, pageSize, sort, descending, filter).ConfigureAwait(false),
-
-            SpecialListType.All_Files => await GetListAsync<WikiFile>(dataStore, pageNumber, pageSize, sort, descending, filter).ConfigureAwait(false),
-
-            SpecialListType.All_Pages => await GetListAsync<Article>(
-                dataStore,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter,
-                x => x.IdItemTypeName == Article.ArticleIdItemTypeName)
-            .ConfigureAwait(false),
-
-#pragma warning disable RCS1113 // Use 'string.IsNullOrEmpty' method: not necessarily supported by data provider
-            SpecialListType.All_Redirects => await GetListAsync<Article>(
-                dataStore,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter,
-                x => x.RedirectTitle != null && x.RedirectTitle != string.Empty)
-            .ConfigureAwait(false),
-#pragma warning restore RCS1113 // Use 'string.IsNullOrEmpty' method.
-
-            SpecialListType.Broken_Redirects => await GetListAsync<Article>(dataStore, pageNumber, pageSize, sort, descending, filter, x => x.IsBrokenRedirect).ConfigureAwait(false),
-
-            SpecialListType.Double_Redirects => await GetListAsync<Article>(dataStore, pageNumber, pageSize, sort, descending, filter, x => x.IsDoubleRedirect).ConfigureAwait(false),
-
-#pragma warning disable CA1829 // Optimize LINQ method call: Count() is translated to SQL by various data providers (Relinq), while the Count property is not necessarily serialized/recognized
-            SpecialListType.Uncategorized_Articles => await GetListAsync<Article>(
-                dataStore,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter,
-                x => x.IdItemTypeName == Article.ArticleIdItemTypeName
-                    && x.RedirectTitle == null
-                    && x.WikiNamespace != wikiOptions.ScriptNamespace
-                    && (x.Categories == null || x.Categories.Count() == 0))
-            .ConfigureAwait(false),
-
-            SpecialListType.Uncategorized_Categories => await GetListAsync<Category>(
-                dataStore,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter,
-                x => x.Categories == null || x.Categories.Count() == 0)
-            .ConfigureAwait(false),
-
-            SpecialListType.Uncategorized_Files => await GetListAsync<WikiFile>(
-                dataStore,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter,
-                x => x.Categories == null || x.Categories.Count() == 0)
-            .ConfigureAwait(false),
-
-            SpecialListType.Unused_Categories => await GetListAsync<Category>(
-                dataStore,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter,
-                x => x.ChildIds.Count() == 0)
-            .ConfigureAwait(false),
-#pragma warning restore CA1829 // Optimize LINQ method call.
-
-            SpecialListType.What_Links_Here => await GetLinksHereAsync(
-                wikiOptions,
-                dataStore,
-                data.Title,
-                data.WikiNamespace,
-                pageNumber,
-                pageSize,
-                sort,
-                descending,
-                filter)
-            .ConfigureAwait(false),
-
-            _ => new PagedList<Article>(null, 1, pageSize, 0),
-        };
-        var missing = type == SpecialListType.Missing_Pages
-            ? await GetMissingAsync(wikiOptions, dataStore, pageNumber, pageSize, descending, filter).ConfigureAwait(false)
-            : null;
-
-        return new SpecialListViewModel(wikiOptions, data, type, descending, list, missing, sort, filter);
-    }
-
-    private static string GetDescription(IWikiOptions options, SpecialListType type, WikiRouteData data) => type switch
+    private static string GetDescription(WikiOptions options, SpecialListType type, WikiRouteData data) => type switch
     {
         SpecialListType.All_Categories => "This page lists all categories, either alphabetically or by most recent update.",
         SpecialListType.All_Files => "This page lists all files, either alphabetically or by most recent update.",
@@ -173,139 +55,7 @@ public record SpecialListViewModel
         _ => string.Empty,
     };
 
-    private static async Task<IPagedList<T>> GetListAsync<T>(
-        IDataStore dataStore,
-        int pageNumber = 1,
-        int pageSize = 50,
-        string? sort = null,
-        bool descending = false,
-        string? filter = null,
-        Expression<Func<T, bool>>? condition = null) where T : Article
-    {
-        var pageCondition = condition is null
-            ? (T x) => !x.IsDeleted
-            : condition.AndAlso(x => !x.IsDeleted);
-        if (!string.IsNullOrEmpty(filter))
-        {
-            pageCondition = pageCondition.AndAlso(x => x.Title.Contains(filter));
-        }
-
-        var query = dataStore.Query<T>();
-        if (pageCondition is not null)
-        {
-            query = query.Where(pageCondition);
-        }
-        if (string.Equals(sort, "timestamp", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.OrderBy(x => x.TimestampTicks, descending: descending);
-        }
-        else
-        {
-            query = query.OrderBy(x => x.Title, descending: descending);
-        }
-
-        return await query
-            .GetPageAsync(pageNumber, pageSize)
-            .ConfigureAwait(false);
-    }
-
-    private static async Task<IPagedList<Article>> GetLinksHereAsync(
-        IWikiOptions options,
-        IDataStore dataStore,
-        string title,
-        string wikiNamespace,
-        int pageNumber = 1,
-        int pageSize = 50,
-        string? sort = null,
-        bool descending = false,
-        string? filter = null)
-    {
-        var allReferences = new HashSet<string>();
-        var references = await PageLinks.GetPageLinksAsync(dataStore, title, wikiNamespace).ConfigureAwait(false);
-        if (references is not null)
-        {
-            foreach (var reference in references.References)
-            {
-                allReferences.Add(reference);
-            }
-        }
-        var transclusions = await PageTransclusions.GetPageTransclusionsAsync(dataStore, title, wikiNamespace).ConfigureAwait(false);
-        if (transclusions is not null)
-        {
-            foreach (var reference in transclusions.References)
-            {
-                allReferences.Add(reference);
-            }
-        }
-        if (!string.Equals(wikiNamespace, options.CategoryNamespace, StringComparison.Ordinal)
-            && !string.Equals(wikiNamespace, options.FileNamespace, StringComparison.Ordinal))
-        {
-            var redirects = await PageRedirects.GetPageRedirectsAsync(dataStore, title, wikiNamespace).ConfigureAwait(false);
-            if (redirects is not null)
-            {
-                foreach (var reference in redirects.References)
-                {
-                    allReferences.Add(reference);
-                }
-            }
-        }
-
-        var articles = new List<Article>();
-        var hasFilter = !string.IsNullOrWhiteSpace(filter);
-        foreach (var reference in allReferences)
-        {
-            var article = await dataStore.GetItemAsync<Article>(reference).ConfigureAwait(false);
-            if (article is not null
-                && (!hasFilter
-                || article.Title.Contains(filter!)))
-            {
-                articles.Add(article);
-            }
-        }
-        if (string.Equals(sort, "timestamp", StringComparison.OrdinalIgnoreCase))
-        {
-            articles.Sort((x, y) => descending
-                ? -x.TimestampTicks.CompareTo(y.TimestampTicks)
-                : x.TimestampTicks.CompareTo(y.TimestampTicks));
-        }
-        else
-        {
-            articles.Sort((x, y) => descending
-                ? -x.Title.CompareTo(y.Title)
-                : x.Title.CompareTo(y.Title));
-        }
-
-        return new PagedList<Article>(
-            articles.Skip((pageNumber - 1) * pageSize).Take(pageSize),
-            pageNumber,
-            pageSize,
-            articles.Count);
-    }
-
-    private static async Task<IPagedList<MissingPage>> GetMissingAsync(
-        IWikiOptions options,
-        IDataStore dataStore,
-        int pageNumber = 1,
-        int pageSize = 50,
-        bool descending = false,
-        string? filter = null)
-    {
-        var query = dataStore.Query<MissingPage>()
-            .Where(x => x.WikiNamespace != options.UserNamespace && x.WikiNamespace != options.GroupNamespace);
-        if (!string.IsNullOrEmpty(filter))
-        {
-#pragma warning disable IDE0057 // Use range operator; Not necessarily implemented by data providers.
-            query = query.Where(x => x.Id.Substring(0, x.Id.Length - 8).Contains(filter));
-#pragma warning restore IDE0057 // Use range operator
-        }
-
-        return await query
-            .OrderBy(x => x.Title, descending: descending)
-            .GetPageAsync(pageNumber, pageSize)
-            .ConfigureAwait(false);
-    }
-
-    private static string? GetSecondaryDescription(IWikiOptions wikiOptions, SpecialListType type)
+    private static string? GetSecondaryDescription(WikiOptions wikiOptions, SpecialListType type)
     {
         if (type is SpecialListType.All_Categories
             or SpecialListType.All_Files

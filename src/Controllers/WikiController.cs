@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
 using System.Text;
+using System.Text.Encodings.Web;
 using Tavenem.DataStorage;
 using Tavenem.Wiki.Mvc.Hubs;
 using Tavenem.Wiki.Mvc.Models;
 using Tavenem.Wiki.Mvc.Services.Search;
 using Tavenem.Wiki.Mvc.SignalR;
 using Tavenem.Wiki.Mvc.ViewModels;
+using Tavenem.Wiki.Queries;
 
 namespace Tavenem.Wiki.Mvc.Controllers;
 
@@ -26,8 +28,9 @@ public class WikiController : Controller
     private readonly ILogger<WikiController> _logger;
     private readonly ISearchClient _searchClient;
     private readonly IWikiUserManager _userManager;
-    private readonly IWikiOptions _wikiOptions;
+    private readonly WikiOptions _wikiOptions;
     private readonly IWikiMvcOptions _wikiMvcOptions;
+    private readonly WikiViewState _wikiViewState;
 
     /// <summary>
     /// Initializes a new instance of <see cref="WikiController"/>.
@@ -40,8 +43,9 @@ public class WikiController : Controller
         ILogger<WikiController> logger,
         ISearchClient searchClient,
         IWikiUserManager userManager,
-        IWikiOptions wikiOptions,
-        IWikiMvcOptions wikiMvcOptions)
+        WikiOptions wikiOptions,
+        IWikiMvcOptions wikiMvcOptions,
+        WikiViewState wikiViewState)
     {
         _dataStore = dataStore;
         _environment = environment;
@@ -52,6 +56,7 @@ public class WikiController : Controller
         _userManager = userManager;
         _wikiOptions = wikiOptions;
         _wikiMvcOptions = wikiMvcOptions;
+        _wikiViewState = wikiViewState;
     }
 
     /// <summary>
@@ -63,7 +68,7 @@ public class WikiController : Controller
 
         data.IsEdit = true;
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
             if (!string.IsNullOrEmpty(_wikiMvcOptions.LoginPath))
@@ -78,7 +83,7 @@ public class WikiController : Controller
             return View("NotAuthenticated");
         }
 
-        var wikiItem = await GetWikiItemAsync(data, true).ConfigureAwait(false);
+        var wikiItem = await GetWikiItemAsync(data, true);
         data.WikiItem = wikiItem;
         data.CanEdit = VerifyPermission(data, user, edit: true);
         if (!data.CanEdit)
@@ -107,7 +112,7 @@ public class WikiController : Controller
 
         var vm = await EditViewModel
             .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user)
-            .ConfigureAwait(false);
+            ;
         return View("Edit", vm);
     }
 
@@ -122,7 +127,7 @@ public class WikiController : Controller
 
         data.IsEdit = true;
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
             if (!string.IsNullOrEmpty(_wikiMvcOptions.LoginPath))
@@ -150,20 +155,47 @@ public class WikiController : Controller
             ModelState.AddModelError("Model", "You cannot move this page out of its namespace.");
             var vm = await EditViewModel
                 .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                .ConfigureAwait(false);
+                ;
             return View("Edit", vm);
         }
         if (!string.IsNullOrEmpty(model.Id))
         {
-            wikiItem = await _dataStore
-                .GetItemAsync<Article>(model.Id)
-                .ConfigureAwait(false);
+            wikiItem = await _dataStore.GetItemAsync<Article>(model.Id);
         }
-        wikiItem ??= GetWikiItem(originalTitle, originalNamespace, true);
+        wikiItem ??= await _dataStore.GetWikiItemAsync(
+            _wikiOptions,
+            originalTitle,
+            originalNamespace,
+            true);
         data.WikiItem = wikiItem;
-        data.CanEdit = VerifyPermission(data, user, edit: true);
+        if (wikiItem is not null)
+        {
+            data.Categories = wikiItem.Categories;
+        }
 
-        string? owner = null;
+        var permission = wikiItem is null
+            ? await _userManager.GetPermissionAsync(
+                _wikiOptions,
+                _dataStore,
+                _groupManager,
+                user,
+                originalTitle,
+                originalNamespace)
+            : await _userManager.GetPermissionAsync(
+                _wikiOptions,
+                _dataStore,
+                _groupManager,
+                wikiItem,
+                user);
+        data.CanEdit = wikiItem is null
+            ? permission.HasFlag(WikiPermission.Create)
+            : permission.HasFlag(WikiPermission.Write);
+        if (!data.CanEdit)
+        {
+            return View("NotAuthorized", data);
+        }
+
+        string? owner;
         var ownerHasId = false;
         var ownerIsGroup = false;
         if (data.IsUserPage)
@@ -180,158 +212,168 @@ public class WikiController : Controller
         {
             owner = model.OwnerSelf ? user.Id : GetEditorId(model.Owner, out ownerHasId, out ownerIsGroup);
         }
-        if (ownerIsGroup)
+
+        if (!permission.HasFlag(WikiPermission.SetOwner)
+            && (model.OwnerSelf
+            || (wikiItem?.Owner is not null
+            && owner != wikiItem.Owner)))
         {
-            ModelState.AddModelError("Model", "Groups cannot own items.");
-            var vm = await EditViewModel
-                .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                .ConfigureAwait(false);
-            return View("Edit", vm);
+            return View("NotAuthorized", data);
         }
 
-        if (!data.CanEdit)
-        {
-            return View("NotAuthorized", data);
-        }
-        else if (wikiItem is null)
-        {
-            if (_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
-            {
-                return View("NotAuthorized", data);
-            }
-            else if (!user.IsWikiAdmin
-                && _wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)))
-            {
-                return View("NotAuthorized", data);
-            }
-            else if (!user.IsWikiAdmin
-                && !_wikiMvcOptions.GetCreatePermission(user, data.WikiNamespace))
-            {
-                return View("NotAuthorized", data);
-            }
-        }
-        else if (wikiItem?.Owner is not null
-            && user.Id != wikiItem.Owner
-            && (model.OwnerSelf
-            || (owner != wikiItem.Owner)))
-        {
-            return View("NotAuthorized", data);
-        }
+        IWikiOwner? intendedOwner = null;
         if (!model.OwnerSelf && owner is not null)
         {
-            var intendedOwner = await _userManager.FindByIdAsync(owner).ConfigureAwait(false);
+            intendedOwner = ownerIsGroup
+                ? await _groupManager.FindByIdAsync(owner)
+                : await _userManager.FindByIdAsync(owner);
+            if (intendedOwner is null && !ownerIsGroup)
+            {
+                intendedOwner = await _groupManager.FindByIdAsync(owner);
+            }
             if (intendedOwner is null && !ownerHasId)
             {
-                intendedOwner = await _userManager.FindByNameAsync(owner).ConfigureAwait(false);
+                intendedOwner = ownerIsGroup
+                    ? await _groupManager.FindByNameAsync(owner)
+                    : await _userManager.FindByNameAsync(owner);
+                if (intendedOwner is null && !ownerIsGroup)
+                {
+                    intendedOwner = await _groupManager.FindByNameAsync(owner);
+                }
             }
             if (intendedOwner is null)
             {
                 ModelState.AddModelError("Model", "No such owner found.");
                 var vm = await EditViewModel
                     .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                    .ConfigureAwait(false);
+                    ;
                 return View("Edit", vm);
             }
         }
 
-        if (wikiItem is not null)
-        {
-            data.Categories = wikiItem.Categories;
-        }
-
         if (!ModelState.IsValid)
         {
-            var vm = await EditViewModel
-                .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                .ConfigureAwait(false);
+            var vm = await EditViewModel.NewAsync(
+                _wikiOptions,
+                _dataStore,
+                _userManager,
+                _groupManager,
+                data,
+                user,
+                model.Markdown);
             return View("Edit", vm);
         }
 
         if (model.ShowPreview)
         {
-            var vm = await EditViewModel
-                .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown, model.Title)
-                .ConfigureAwait(false);
+            var vm = await EditViewModel.NewAsync(
+                _wikiOptions,
+                _dataStore,
+                _userManager,
+                _groupManager,
+                data,
+                user,
+                model.Markdown,
+                model.Title);
             return View("Edit", vm);
         }
 
-        var allowedEditors = model.EditorSelf ? new List<string>() : null;
-        if (!model.EditorSelf
-            && model.AllowedEditors is not null
-            && !data.IsUserPage
+        List<string>? allowedEditors = null;
+        List<string>? allowedEditorGroups = null;
+        List<string>? allowedViewers = null;
+        List<string>? allowedViewerGroups = null;
+        if (!data.IsUserPage
             && !data.IsGroupPage
-            && (model.OwnerSelf || owner is not null))
+            && permission.HasFlag(WikiPermission.SetPermissions)
+            && (model.OwnerSelf || intendedOwner is not null))
         {
-            foreach (var name in model.AllowedEditors.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            if (model.EditorSelf)
             {
-                var id = GetEditorId(name, out var hasId, out var isGroup);
+                allowedEditors = new List<string>();
+            }
+            else if (model.AllowedEditors is not null)
+            {
+                foreach (var name in model.AllowedEditors.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    var id = GetEditorId(name, out var hasId, out var isGroup);
 
-                if (isGroup)
-                {
-                    var group = await _groupManager.FindByIdAsync(id).ConfigureAwait(false);
-                    if (group is not null)
+                    if (isGroup)
                     {
-                        (allowedEditors ??= new List<string>()).Add($"G:{group.Id}");
-                    }
-                }
-                else
-                {
-                    var editor = await _userManager.FindByIdAsync(id).ConfigureAwait(false);
-                    if (editor is null && !hasId)
-                    {
-                        editor = await _userManager.FindByNameAsync(id).ConfigureAwait(false);
-                    }
-                    if (editor is not null)
-                    {
-                        (allowedEditors ??= new List<string>()).Add(editor.Id);
-                    }
-                    else if (!hasId)
-                    {
-                        var groupEditor = await _groupManager.FindByIdAsync(id).ConfigureAwait(false)
-                            ?? await _groupManager.FindByNameAsync(id).ConfigureAwait(false);
-                        if (groupEditor is not null)
+                        var group = await _groupManager.FindByIdAsync(id);
+                        if (group is null && !hasId)
                         {
-                            (allowedEditors ??= new List<string>()).Add($"G:{groupEditor.Id}");
+                            group = await _groupManager.FindByNameAsync(id);
+                        }
+                        if (group is not null)
+                        {
+                            (allowedEditorGroups ??= new List<string>()).Add(group.Id);
+                        }
+                    }
+                    else
+                    {
+                        var editor = await _userManager.FindByIdAsync(id);
+                        if (editor is null && !hasId)
+                        {
+                            editor = await _userManager.FindByNameAsync(id);
+                        }
+                        if (editor is not null)
+                        {
+                            (allowedEditors ??= new List<string>()).Add(editor.Id);
+                        }
+                        else if (!hasId)
+                        {
+                            var groupEditor = await _groupManager.FindByIdAsync(id)
+                                ?? await _groupManager.FindByNameAsync(id);
+                            if (groupEditor is not null)
+                            {
+                                (allowedEditorGroups ??= new List<string>()).Add(groupEditor.Id);
+                            }
                         }
                     }
                 }
             }
-        }
-        var allowedViewers = model.ViewerSelf ? new List<string>() : null;
-        if (!model.ViewerSelf
-            && model.AllowedViewers is not null
-            && (model.OwnerSelf || owner is not null))
-        {
-            foreach (var name in model.AllowedViewers.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                var id = GetEditorId(name, out var hasId, out var isGroup);
 
-                if (isGroup)
+            if (model.ViewerSelf)
+            {
+                allowedViewers = new List<string>();
+            }
+            else if (model.AllowedViewers is not null)
+            {
+                foreach (var name in model.AllowedViewers.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
-                    var group = await _groupManager.FindByIdAsync(id).ConfigureAwait(false);
-                    if (group is not null)
+                    var id = GetEditorId(name, out var hasId, out var isGroup);
+
+                    if (isGroup)
                     {
-                        (allowedViewers ??= new List<string>()).Add($"G:{group.Id}");
-                    }
-                }
-                else
-                {
-                    var viewer = await _userManager.FindByIdAsync(id).ConfigureAwait(false);
-                    if (viewer is null && !hasId)
-                    {
-                        viewer = await _userManager.FindByNameAsync(id).ConfigureAwait(false);
-                    }
-                    if (viewer is not null)
-                    {
-                        (allowedViewers ??= new List<string>()).Add(viewer.Id);
-                    }
-                    else if (!hasId)
-                    {
-                        var groupEditor = await _groupManager.FindByIdAsync(id).ConfigureAwait(false)
-                            ?? await _groupManager.FindByNameAsync(id).ConfigureAwait(false);
-                        if (groupEditor is not null)
+                        var group = await _groupManager.FindByIdAsync(id);
+                        if (group is null && !hasId)
                         {
-                            (allowedViewers ??= new List<string>()).Add($"G:{groupEditor.Id}");
+                            group = await _groupManager.FindByNameAsync(id);
+                        }
+                        if (group is not null)
+                        {
+                            (allowedViewerGroups ??= new List<string>()).Add(group.Id);
+                        }
+                    }
+                    else
+                    {
+                        var editor = await _userManager.FindByIdAsync(id);
+                        if (editor is null && !hasId)
+                        {
+                            editor = await _userManager.FindByNameAsync(id);
+                        }
+                        if (editor is not null)
+                        {
+                            (allowedViewers ??= new List<string>()).Add(editor.Id);
+                        }
+                        else if (!hasId)
+                        {
+                            var groupEditor = await _groupManager.FindByIdAsync(id)
+                                ?? await _groupManager.FindByNameAsync(id);
+                            if (groupEditor is not null)
+                            {
+                                (allowedViewerGroups ??= new List<string>()).Add(groupEditor.Id);
+                            }
                         }
                     }
                 }
@@ -353,10 +395,19 @@ public class WikiController : Controller
                     user.Id,
                     revisionComment: model.Comment,
                     isDeleted: true,
-                    owner: owner,
-                    allowedEditors: allowedEditors,
-                    allowedViewers: allowedViewers)
-                    .ConfigureAwait(false);
+                    owner: intendedOwner?.Id,
+                    allowedEditors: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedEditors
+                        : wikiItem.AllowedEditors,
+                    allowedViewers: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedViewers
+                        : wikiItem.AllowedViewers,
+                    allowedEditorGroups: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedEditorGroups
+                        : wikiItem.AllowedEditorGroups,
+                    allowedViewerGroups: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedViewerGroups
+                        : wikiItem.AllowedViewerGroups);
             }
             catch (Exception ex)
             {
@@ -364,7 +415,7 @@ public class WikiController : Controller
                 ModelState.AddModelError("Model", "The article was not deleted successfully.");
                 var vm = await EditViewModel
                     .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                    .ConfigureAwait(false);
+                    ;
                 return View("Edit", vm);
             }
 
@@ -372,7 +423,7 @@ public class WikiController : Controller
             {
                 try
                 {
-                    await _fileManager.DeleteFileAsync(file.FilePath).ConfigureAwait(false);
+                    await _fileManager.DeleteFileAsync(file.FilePath);
                 }
                 catch (Exception ex)
                 {
@@ -395,10 +446,19 @@ public class WikiController : Controller
                     user.Id,
                     model.Markdown,
                     wikiNamespace,
-                    owner,
-                    allowedEditors,
-                    allowedViewers)
-                    .ConfigureAwait(false);
+                    owner: intendedOwner?.Id,
+                    allowedEditors: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedEditors
+                        : null,
+                    allowedViewers: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedViewers
+                        : null,
+                    allowedEditorGroups: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedEditorGroups
+                        : null,
+                    allowedViewerGroups: permission.HasFlag(WikiPermission.SetPermissions)
+                        ? allowedViewerGroups
+                        : null);
                 return RedirectToAction("Read", new { title = newArticle.Title, wikiNamespace = newArticle.WikiNamespace });
             }
             catch (Exception ex)
@@ -407,7 +467,7 @@ public class WikiController : Controller
                 ModelState.AddModelError("Model", "The new item could not be created.");
                 var vm = await EditViewModel
                     .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                    .ConfigureAwait(false);
+                    ;
                 return View("Edit", vm);
             }
         }
@@ -437,10 +497,19 @@ public class WikiController : Controller
                 model.Comment,
                 newNamespace,
                 isDeleted: false,
-                owner,
-                allowedEditors,
-                allowedViewers)
-                .ConfigureAwait(false);
+                owner: intendedOwner?.Id,
+                allowedEditors: permission.HasFlag(WikiPermission.SetPermissions)
+                    ? allowedEditors
+                    : wikiItem.AllowedEditors,
+                allowedViewers: permission.HasFlag(WikiPermission.SetPermissions)
+                    ? allowedViewers
+                    : wikiItem.AllowedViewers,
+                allowedEditorGroups: permission.HasFlag(WikiPermission.SetPermissions)
+                    ? allowedEditorGroups
+                    : wikiItem.AllowedEditorGroups,
+                allowedViewerGroups: permission.HasFlag(WikiPermission.SetPermissions)
+                    ? allowedViewerGroups
+                    : wikiItem.AllowedViewerGroups);
         }
         catch (Exception ex)
         {
@@ -448,7 +517,7 @@ public class WikiController : Controller
             ModelState.AddModelError("Model", "The edit could not be completed.");
             var vm = await EditViewModel
                 .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                .ConfigureAwait(false);
+                ;
             return View("Edit", vm);
         }
 
@@ -466,7 +535,7 @@ public class WikiController : Controller
                     owner,
                     allowedEditors,
                     allowedViewers)
-                    .ConfigureAwait(false);
+                    ;
             }
             catch (Exception ex)
             {
@@ -474,7 +543,7 @@ public class WikiController : Controller
                 ModelState.AddModelError("Model", "The redirect could not be created automatically.");
                 var vm = await EditViewModel
                     .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                    .ConfigureAwait(false);
+                    ;
                 return View("Edit", vm);
             }
         }
@@ -499,19 +568,7 @@ public class WikiController : Controller
             return Json(string.Empty);
         }
 
-        Article? article;
-        if (string.Equals(wikiNamespace, _wikiOptions.FileNamespace, StringComparison.OrdinalIgnoreCase))
-        {
-            article = WikiFile.GetFile(_wikiOptions, _dataStore, title);
-        }
-        else if (string.Equals(wikiNamespace, _wikiOptions.CategoryNamespace, StringComparison.OrdinalIgnoreCase))
-        {
-            article = Category.GetCategory(_wikiOptions, _dataStore, title);
-        }
-        else
-        {
-            article = Article.GetArticle(_wikiOptions, _dataStore, title, wikiNamespace);
-        }
+        var article = await _dataStore.GetWikiItemAsync(_wikiOptions, title, wikiNamespace);
         if (article is null)
         {
             return Json(string.Empty);
@@ -524,7 +581,7 @@ public class WikiController : Controller
                 return Json(string.Empty);
             }
 
-            var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+            var user = await _userManager.GetUserAsync(User);
             if (user?.IsDeleted != false
                 || user.IsDisabled)
             {
@@ -557,11 +614,11 @@ public class WikiController : Controller
     {
         var data = GetWikiRouteData();
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
 
         if (data.IsSystem)
         {
-            var special = await TryGettingSystemPage(data, user).ConfigureAwait(false);
+            var special = await TryGettingSystemPage(data, user);
             if (special is not null)
             {
                 return special;
@@ -569,36 +626,40 @@ public class WikiController : Controller
             data.IsSystem = false;
         }
 
-        var wikiItem = await GetWikiItemAsync(data).ConfigureAwait(false);
-        if (wikiItem is null)
-        {
-            data.CanEdit = user is not null
-                && !_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase))
-                && (user.IsWikiAdmin
-                || !_wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
-            return View("NoContent", data);
-        }
-
-        data.WikiItem = wikiItem;
-        if (!VerifyPermission(data, user))
+        var history = await _dataStore.GetHistoryAsync(
+            _wikiOptions,
+            _userManager,
+            _groupManager,
+            new HistoryRequest(
+                data.Title,
+                data.WikiNamespace,
+                pageNumber,
+                pageSize,
+                editor,
+                start?.UtcTicks,
+                end?.UtcTicks),
+            user?.Id);
+        data.CanEdit = history?.Revisions?.TotalCount > 0
+            ? history?.Permission.HasFlag(WikiPermission.Write) == true
+            : history?.Permission.HasFlag(WikiPermission.Create) == true;
+        if (history?.Permission.HasFlag(WikiPermission.Read) != true)
         {
             return View("NotAuthorized", data);
         }
-        data.CanEdit = VerifyPermission(data, user, edit: true);
-
         data.IsHistory = true;
-
-        var vm = await HistoryViewModel.NewAsync(
-            _wikiOptions,
-            _dataStore,
-            _userManager,
-            data,
-            pageNumber,
-            pageSize,
-            editor,
-            start,
-            end).ConfigureAwait(false);
-
+        var vm = new HistoryViewModel(
+            history.Editors,
+            string.Equals(data.WikiNamespace, _wikiOptions.FileNamespace, StringComparison.OrdinalIgnoreCase),
+            history.Permission,
+            history.Revisions is null
+                ? null
+                : new PagedList<RevisionViewModel>(
+                    history.Revisions.List.Select(x => new RevisionViewModel(
+                        x,
+                        history.Editors?.FirstOrDefault(y => string.Equals(y.Id, x.Editor)))),
+                    history.Revisions.PageNumber,
+                    history.Revisions.PageSize,
+                    history.Revisions.TotalCount));
         return View("History", vm);
     }
 
@@ -609,11 +670,11 @@ public class WikiController : Controller
     {
         var data = GetWikiRouteData();
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
 
         if (data.IsSystem)
         {
-            var special = await TryGettingSystemPage(data, user).ConfigureAwait(false);
+            var special = await TryGettingSystemPage(data, user);
             if (special is not null)
             {
                 return special;
@@ -621,25 +682,113 @@ public class WikiController : Controller
             data.IsSystem = false;
         }
 
-        var wikiItem = await GetWikiItemAsync(data).ConfigureAwait(false);
-        if (wikiItem?.IsDeleted != false)
+        if (!data.IsTalk
+            && !data.RequestedDiffCurrent
+            && !data.RequestedDiffPrevious
+            && !data.RequestedDiffTimestamp.HasValue
+            && !data.RequestedTimestamp.HasValue)
         {
-            data.CanEdit = user is not null
-                && !_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase))
-                && (user.IsWikiAdmin
-                || !_wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
-            if (!data.IsCategory)
+            if (data.IsCategory)
             {
-                return View("NoContent", data);
+                var categoryInfo = await _dataStore.GetCategoryAsync(
+                    _wikiOptions,
+                    _userManager,
+                    _groupManager,
+                    data.Title,
+                    user?.Id);
+                return View("Category", categoryInfo);
+            }
+            else if (data.IsGroupPage)
+            {
+                var groupInfo = await _dataStore.GetGroupPageAsync(
+                    _wikiOptions,
+                    _userManager,
+                    _groupManager,
+                    data.Title,
+                    user?.Id);
+                return View("Group", groupInfo);
             }
         }
 
-        data.WikiItem = wikiItem;
-        if (!VerifyPermission(data, user))
+        WikiItemInfo? wikiItem = null;
+        if (data.RequestedDiffCurrent
+            && data.RequestedTimestamp.HasValue)
+        {
+            wikiItem = await _dataStore.GetWikiItemDiffWithCurrentAsync(
+                _wikiOptions,
+                _userManager,
+                _groupManager,
+                data.RequestedTimestamp.Value,
+                data.Title,
+                data.WikiNamespace,
+                user?.Id);
+        }
+        else if (data.RequestedDiffPrevious)
+        {
+            wikiItem = await _dataStore.GetWikiItemDiffWithPreviousAsync(
+                _wikiOptions,
+                _userManager,
+                _groupManager,
+                data.RequestedTimestamp,
+                data.Title,
+                data.WikiNamespace,
+                user?.Id);
+        }
+        else if (data.RequestedDiffTimestamp.HasValue)
+        {
+            wikiItem = data.RequestedTimestamp.HasValue
+                ? await _dataStore.GetWikiItemDiffAsync(
+                    _wikiOptions,
+                    _userManager,
+                    _groupManager,
+                    data.RequestedTimestamp.Value,
+                    data.RequestedDiffTimestamp.Value,
+                    data.Title,
+                    data.WikiNamespace,
+                    user?.Id)
+                : await _dataStore.GetWikiItemDiffWithCurrentAsync(
+                    _wikiOptions,
+                    _userManager,
+                    _groupManager,
+                    data.RequestedDiffTimestamp.Value,
+                    data.Title,
+                    data.WikiNamespace,
+                    user?.Id);
+        }
+        else if (data.RequestedTimestamp.HasValue)
+        {
+            wikiItem = await _dataStore.GetWikiItemAtTimeAsync(
+                _wikiOptions,
+                _userManager,
+                _groupManager,
+                data.RequestedTimestamp.Value,
+                data.Title,
+                data.WikiNamespace,
+                user?.Id);
+        }
+        else
+        {
+            wikiItem = await _dataStore.GetWikiItemAsync(
+                _wikiOptions,
+                _userManager,
+                _groupManager,
+                data.Title,
+                data.WikiNamespace,
+                user?.Id);
+        }
+        data.CanEdit = wikiItem?.Permission.HasFlag(WikiPermission.Write) == true;
+        if (wikiItem?.Item?.IsDeleted != false
+            && !data.IsCategory)
+        {
+            return View("NoContent", data);
+        }
+
+        data.WikiItem = wikiItem?.Item;
+        data.Categories = data.WikiItem?.Categories;
+        if (wikiItem?.Permission.HasFlag(WikiPermission.Read) != true)
         {
             return View("NotAuthorized", data);
         }
-        data.CanEdit = VerifyPermission(data, user, edit: true);
 
         if (data.IsTalk)
         {
@@ -647,12 +796,13 @@ public class WikiController : Controller
                 data,
                 _wikiMvcOptions.TalkHubRoute ?? WikiMvcOptions.DefaultTalkHubRoute,
                 _wikiMvcOptions.TenorAPIKey,
-                wikiItem?.Id);
-            if (wikiItem is not null)
+                wikiItem?.Item?.Id);
+            if (wikiItem?.Item is not null)
             {
-                var replies = await _dataStore.Query<Message>().Where(x => x.TopicId == wikiItem.Id)
-                    .ToListAsync()
-                    .ConfigureAwait(false);
+                var replies = await _dataStore
+                    .Query<Message>()
+                    .Where(x => x.TopicId == wikiItem.Item.Id)
+                    .ToListAsync();
                 var responses = new List<MessageResponse>();
                 var senders = new Dictionary<string, bool>();
                 var senderPages = new Dictionary<string, bool>();
@@ -668,25 +818,33 @@ public class WikiController : Controller
                             && !link.Missing
                             && !string.IsNullOrEmpty(link.WikiNamespace))
                         {
-                            var article = Article.GetArticle(_wikiOptions, _dataStore, link.Title, link.WikiNamespace);
+                            var article = await Article.GetArticleAsync(
+                                _wikiOptions,
+                                _dataStore,
+                                link.Title,
+                                link.WikiNamespace);
                             if (article?.IsDeleted == false)
                             {
                                 preview = true;
                                 var namespaceStr = article.WikiNamespace == _wikiOptions.DefaultNamespace
                                     ? string.Empty
                                     : string.Format(WikiTalkHub.PreviewNamespaceTemplate, article.WikiNamespace);
-                                html = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(string.Format(WikiTalkHub.PreviewTemplate, namespaceStr, article.Title, article.Preview));
+                                html = HtmlEncoder.Default.Encode(string.Format(
+                                    WikiTalkHub.PreviewTemplate,
+                                    namespaceStr,
+                                    article.Title,
+                                    article.Preview));
                             }
                         }
                     }
                     if (!preview)
                     {
-                        html = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(reply.Html);
+                        html = HtmlEncoder.Default.Encode(reply.Html);
                     }
                     IWikiUser? replyUser = null;
                     if (!senders.TryGetValue(reply.SenderId, out var exists))
                     {
-                        replyUser = await _userManager.FindByIdAsync(reply.SenderId).ConfigureAwait(false);
+                        replyUser = await _userManager.FindByIdAsync(reply.SenderId);
                         exists = replyUser?.IsDeleted == false;
                         senders.Add(reply.SenderId, exists);
                     }
@@ -698,9 +856,13 @@ public class WikiController : Controller
                         }
                         else
                         {
-                            replyUser ??= await _userManager.FindByIdAsync(reply.SenderId).ConfigureAwait(false);
+                            replyUser ??= await _userManager.FindByIdAsync(reply.SenderId);
                             pageExists = replyUser?.IsDeleted == false
-                                && Article.GetArticle(_wikiOptions, _dataStore, replyUser.Id, _wikiOptions.UserNamespace) is not null;
+                                && await Article.GetArticleAsync(
+                                    _wikiOptions,
+                                    _dataStore,
+                                    replyUser.Id,
+                                    _wikiOptions.UserNamespace) is not null;
                         }
                         senderPages.Add(reply.SenderId, pageExists);
                     }
@@ -715,29 +877,12 @@ public class WikiController : Controller
             return View("Talk", vm);
         }
 
-        var model = await WikiItemViewModel.NewAsync(_wikiOptions, _dataStore, data).ConfigureAwait(false);
-
-        if (data.IsCategory)
-        {
-            var categoryModel = await CategoryViewModel
-                .NewAsync(_wikiOptions, _dataStore, data, model)
-                .ConfigureAwait(false);
-            return View("Category", categoryModel);
-        }
-        else if (data.IsGroupPage)
-        {
-            var groupModel = await GroupViewModel
-                .NewAsync(_wikiOptions, _dataStore, _groupManager, data, model)
-                .ConfigureAwait(false);
-            return View("Group", groupModel);
-        }
-
         if (data.IsFile)
         {
-            return View("File", model);
+            return View("File", wikiItem);
         }
 
-        return View("Article", model);
+        return View("Article", wikiItem);
     }
 
     /// <summary>
@@ -786,8 +931,8 @@ public class WikiController : Controller
                 }
                 else
                 {
-                    var foundOwner = await _userManager.FindByNameAsync(ownerId).ConfigureAwait(false)
-                        ?? await _userManager.FindByIdAsync(ownerId).ConfigureAwait(false);
+                    var foundOwner = await _userManager.FindByNameAsync(ownerId)
+                        ?? await _userManager.FindByIdAsync(ownerId);
                     if (foundOwner is not null)
                     {
                         ownerIds.Add(excluded ? $"!{foundOwner.Id}" : foundOwner.Id);
@@ -806,7 +951,7 @@ public class WikiController : Controller
 
         query = query.Trim('"');
         var (queryNamespace, title, isTalk, _) = Article.GetTitleParts(_wikiOptions, query);
-        var wikiItem = GetWikiItem(title, queryNamespace);
+        var wikiItem = await _dataStore.GetWikiItemAsync(_wikiOptions, title, queryNamespace);
 
         if (!original.StartsWith("\"") && wikiItem is not null)
         {
@@ -832,7 +977,7 @@ public class WikiController : Controller
 
         data.IsSearch = true;
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
 
         if (!string.IsNullOrEmpty(searchNamespace))
         {
@@ -863,7 +1008,7 @@ public class WikiController : Controller
             Sort = sort,
             WikiNamespace = searchNamespace,
             Owner = owner,
-        }, user).ConfigureAwait(false);
+        }, user);
 
         return View(new SearchViewModel(result, wikiItem));
     }
@@ -888,27 +1033,27 @@ public class WikiController : Controller
                 .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase)
                     && x.WikiNamespace == _wikiOptions.DefaultNamespace)
                 .ToListAsync()
-                .ConfigureAwait(false);
+                ;
             if (items.Count == 0)
             {
                 items = await _dataStore.Query<Article>()
                     .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase))
                     .ToListAsync()
-                    .ConfigureAwait(false);
+                    ;
             }
             if (items.Count == 0)
             {
                 items = await _dataStore.Query<Category>()
                     .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase))
                     .ToListAsync()
-                    .ConfigureAwait(false);
+                    ;
             }
             if (items.Count == 0)
             {
                 items = await _dataStore.Query<WikiFile>()
                     .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase))
                     .ToListAsync()
-                    .ConfigureAwait(false);
+                    ;
             }
         }
         else if (wikiNamespace == _wikiOptions.CategoryNamespace)
@@ -916,14 +1061,14 @@ public class WikiController : Controller
             items = await _dataStore.Query<Category>()
                 .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase))
                 .ToListAsync()
-                .ConfigureAwait(false);
+                ;
         }
         else if (wikiNamespace == _wikiOptions.FileNamespace)
         {
             items = await _dataStore.Query<WikiFile>()
                 .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase))
                 .ToListAsync()
-                .ConfigureAwait(false);
+                ;
         }
         else
         {
@@ -931,7 +1076,7 @@ public class WikiController : Controller
                 .Where(x => x.Title.StartsWith(title, StringComparison.OrdinalIgnoreCase)
                     && x.WikiNamespace == wikiNamespace)
                 .ToListAsync()
-                .ConfigureAwait(false);
+                ;
         }
 
         return Json(items.Select(x => Article.GetFullTitle(_wikiOptions, x.Title, x.WikiNamespace)));
@@ -954,7 +1099,7 @@ public class WikiController : Controller
             return NotFound();
         }
 
-        return await GetSpecialListAsync(t, pageNumber, pageSize, sort, descending, filter).ConfigureAwait(false);
+        return await GetSpecialListAsync(t, pageNumber, pageSize, sort, descending, filter);
     }
 
     /// <summary>
@@ -962,7 +1107,7 @@ public class WikiController : Controller
     /// </summary>
     public async Task<IActionResult> ShowUploadAsync(UploadViewModel model)
     {
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
             if (!string.IsNullOrEmpty(_wikiMvcOptions.LoginPath))
@@ -982,7 +1127,7 @@ public class WikiController : Controller
             return View("NotAuthorizedToUpload");
         }
 
-        var limit = await _groupManager.UserMaxUploadLimit(user).ConfigureAwait(false);
+        var limit = await _groupManager.UserMaxUploadLimit(user);
         if (limit == 0)
         {
             return View("NotAuthorizedToUpload");
@@ -1007,7 +1152,7 @@ public class WikiController : Controller
             return View("Upload", model);
         }
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
             if (!string.IsNullOrEmpty(_wikiMvcOptions.LoginPath))
@@ -1027,7 +1172,7 @@ public class WikiController : Controller
             return View("NotAuthorizedToUpload");
         }
 
-        var limit = await _groupManager.UserMaxUploadLimit(user).ConfigureAwait(false);
+        var limit = await _groupManager.UserMaxUploadLimit(user);
         if (limit == 0)
         {
             return View("NotAuthorizedToUpload");
@@ -1040,9 +1185,15 @@ public class WikiController : Controller
             return View("Upload", model);
         }
 
-        var wikiItem = WikiFile.GetFile(_wikiOptions, _dataStore, title);
-        data.WikiItem = wikiItem;
-        data.CanEdit = VerifyPermission(data, user, edit: true);
+        var wikiItem = await _dataStore.GetWikiItemAsync(
+            _wikiOptions,
+            _userManager,
+            _groupManager,
+            title,
+            _wikiOptions.FileNamespace,
+            user.Id);
+        data.WikiItem = wikiItem?.Item;
+        data.CanEdit = wikiItem?.Permission.HasFlag(WikiPermission.Write) == true;
 
         var ownerHasId = false;
         var ownerIsGroup = false;
@@ -1052,7 +1203,7 @@ public class WikiController : Controller
             ModelState.AddModelError("Model", "Groups cannot own items.");
             var vm = await EditViewModel
                 .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                .ConfigureAwait(false);
+                ;
             return View("Edit", vm);
         }
 
@@ -1072,33 +1223,33 @@ public class WikiController : Controller
                 return View("NotAuthorized", data);
             }
         }
-        else if (wikiItem?.Owner is not null
-            && user.Id != wikiItem.Owner
+        else if (wikiItem?.Item?.Owner is not null
+            && user.Id != wikiItem.Item.Owner
             && (model.OwnerSelf
-            || (owner != wikiItem.Owner)))
+            || (owner != wikiItem.Item.Owner)))
         {
             return View("NotAuthorized", data);
         }
         if (!model.OwnerSelf && owner is not null)
         {
-            var intendedOwner = await _userManager.FindByIdAsync(owner).ConfigureAwait(false);
+            var intendedOwner = await _userManager.FindByIdAsync(owner);
             if (intendedOwner is null && !ownerHasId)
             {
-                intendedOwner = await _userManager.FindByNameAsync(owner).ConfigureAwait(false);
+                intendedOwner = await _userManager.FindByNameAsync(owner);
             }
             if (intendedOwner is null)
             {
                 ModelState.AddModelError("Model", "No such owner found.");
                 var vm = await EditViewModel
                     .NewAsync(_wikiOptions, _dataStore, _userManager, _groupManager, data, user, model.Markdown)
-                    .ConfigureAwait(false);
+                    ;
                 return View("Edit", vm);
             }
         }
 
         if (wikiItem is not null)
         {
-            model.OverwritePermission = VerifyPermission(wikiItem, user, userPage: false, groupPage: false, edit: true);
+            model.OverwritePermission = data.CanEdit;
             if (!model.OverwriteConfirm || !model.OverwritePermission)
             {
                 return View("OverwriteFileConfirm", model);
@@ -1107,7 +1258,7 @@ public class WikiController : Controller
 
         if (model.ShowPreview)
         {
-            var vm = new UploadViewModel(_wikiOptions, _dataStore, data, model.Markdown, model.Title);
+            var vm = await UploadViewModel.NewAsync(_wikiOptions, _dataStore, data, model.Markdown, model.Title);
             return View("Upload", vm);
         }
 
@@ -1141,7 +1292,7 @@ public class WikiController : Controller
             return View("NotAuthorizedForUploadSize");
         }
 
-        if (limit > 0 && !await _fileManager.HasFreeSpaceAsync(user, size).ConfigureAwait(false))
+        if (limit > 0 && !await _fileManager.HasFreeSpaceAsync(user, size))
         {
             return View("NotAuthorizedForUploadSize");
         }
@@ -1150,7 +1301,7 @@ public class WikiController : Controller
         string? storagePath = null;
         try
         {
-            storagePath = await _fileManager.SaveFileAsync(fileInfo.OpenRead(), fileInfo.Name, owner).ConfigureAwait(false);
+            storagePath = await _fileManager.SaveFileAsync(fileInfo.OpenRead(), fileInfo.Name, owner);
         }
         catch (Exception ex)
         {
@@ -1172,15 +1323,15 @@ public class WikiController : Controller
             _logger.LogError(ex, "Exception during temp file delete for file at path {Path}", fileInfo.FullName);
         }
 
-        if (wikiItem is not null)
+        if (wikiItem?.Item is WikiFile fileToDelete)
         {
             try
             {
-                await _fileManager.DeleteFileAsync(wikiItem.FilePath).ConfigureAwait(false);
+                await _fileManager.DeleteFileAsync(fileToDelete.FilePath);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to delete old file {Path} during overwrite operation", wikiItem.FilePath);
+                _logger.LogError(ex, "Unable to delete old file {Path} during overwrite operation", fileToDelete.FilePath);
             }
         }
 
@@ -1195,7 +1346,7 @@ public class WikiController : Controller
 
                 if (isGroup)
                 {
-                    var group = await _groupManager.FindByIdAsync(id).ConfigureAwait(false);
+                    var group = await _groupManager.FindByIdAsync(id);
                     if (group is not null)
                     {
                         (allowedEditors ??= new List<string>()).Add($"G:{group.Id}");
@@ -1203,10 +1354,10 @@ public class WikiController : Controller
                 }
                 else
                 {
-                    var editor = await _userManager.FindByIdAsync(id).ConfigureAwait(false);
+                    var editor = await _userManager.FindByIdAsync(id);
                     if (editor is null && !hasId)
                     {
-                        editor = await _userManager.FindByNameAsync(id).ConfigureAwait(false);
+                        editor = await _userManager.FindByNameAsync(id);
                     }
                     if (editor is not null)
                     {
@@ -1214,8 +1365,8 @@ public class WikiController : Controller
                     }
                     else if (!hasId)
                     {
-                        var groupEditor = await _groupManager.FindByIdAsync(id).ConfigureAwait(false)
-                            ?? await _groupManager.FindByNameAsync(id).ConfigureAwait(false);
+                        var groupEditor = await _groupManager.FindByIdAsync(id)
+                            ?? await _groupManager.FindByNameAsync(id);
                         if (groupEditor is not null)
                         {
                             (allowedEditors ??= new List<string>()).Add($"G:{groupEditor.Id}");
@@ -1235,7 +1386,7 @@ public class WikiController : Controller
 
                 if (isGroup)
                 {
-                    var group = await _groupManager.FindByIdAsync(id).ConfigureAwait(false);
+                    var group = await _groupManager.FindByIdAsync(id);
                     if (group is not null)
                     {
                         (allowedViewers ??= new List<string>()).Add($"G:{group.Id}");
@@ -1243,10 +1394,10 @@ public class WikiController : Controller
                 }
                 else
                 {
-                    var viewer = await _userManager.FindByIdAsync(id).ConfigureAwait(false);
+                    var viewer = await _userManager.FindByIdAsync(id);
                     if (viewer is null && !hasId)
                     {
-                        viewer = await _userManager.FindByNameAsync(id).ConfigureAwait(false);
+                        viewer = await _userManager.FindByNameAsync(id);
                     }
                     if (viewer is not null)
                     {
@@ -1254,8 +1405,8 @@ public class WikiController : Controller
                     }
                     else if (!hasId)
                     {
-                        var groupEditor = await _groupManager.FindByIdAsync(id).ConfigureAwait(false)
-                            ?? await _groupManager.FindByNameAsync(id).ConfigureAwait(false);
+                        var groupEditor = await _groupManager.FindByIdAsync(id)
+                            ?? await _groupManager.FindByNameAsync(id);
                         if (groupEditor is not null)
                         {
                             (allowedViewers ??= new List<string>()).Add($"G:{groupEditor.Id}");
@@ -1265,7 +1416,7 @@ public class WikiController : Controller
             }
         }
 
-        if (wikiItem is null)
+        if (wikiItem?.Item is not WikiFile file)
         {
             try
             {
@@ -1282,7 +1433,7 @@ public class WikiController : Controller
                     owner,
                     allowedEditors,
                     allowedViewers)
-                    .ConfigureAwait(false);
+                    ;
                 return RedirectToAction("Read", new { title = newArticle.Title, wikiNamespace = _wikiOptions.FileNamespace });
             }
             catch (Exception ex)
@@ -1293,13 +1444,16 @@ public class WikiController : Controller
             }
         }
 
-        var newTitle = string.Equals(title.ToWikiTitleCase(), wikiItem.Title, StringComparison.CurrentCulture)
+        var newTitle = string.Equals(
+            title.ToWikiTitleCase(),
+            file.Title,
+            StringComparison.CurrentCulture)
             ? null
             : title.ToWikiTitleCase();
 
         try
         {
-            await wikiItem.ReviseAsync(
+            await file.ReviseAsync(
                 _wikiOptions,
                 _dataStore,
                 user.Id,
@@ -1313,12 +1467,12 @@ public class WikiController : Controller
                 owner,
                 allowedEditors,
                 allowedViewers)
-                .ConfigureAwait(false);
-            return RedirectToAction("Read", new { title = newTitle ?? wikiItem.Title, wikiNamespace = _wikiOptions.FileNamespace });
+                ;
+            return RedirectToAction("Read", new { title = newTitle ?? file.Title, wikiNamespace = _wikiOptions.FileNamespace });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "User with ID {UserId} failed to upload new file for wiki item with ID {Id}, new title {Title}, and new length {Length}.", user.Id, wikiItem.Id, newTitle, size);
+            _logger.LogError(ex, "User with ID {UserId} failed to upload new file for wiki item with ID {Id}, new title {Title}, and new length {Length}.", user.Id, file.Id, newTitle, size);
             ModelState.AddModelError("Model", "The file page edit could not be completed.");
             return View("Upload", model);
         }
@@ -1330,14 +1484,14 @@ public class WikiController : Controller
     [HttpPost("wiki/api/fileupload")]
     public async Task<IActionResult> UploadFileAsync(IFormFile file)
     {
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
 
         if (user?.IsDeleted != false || user.IsDisabled)
         {
             return Unauthorized();
         }
 
-        var limit = await _groupManager.UserMaxUploadLimit(user).ConfigureAwait(false);
+        var limit = await _groupManager.UserMaxUploadLimit(user);
         if (limit == 0)
         {
             return Unauthorized();
@@ -1369,7 +1523,7 @@ public class WikiController : Controller
                 Directory.CreateDirectory(dir);
             }
             using var stream = System.IO.File.Create(path);
-            await file.CopyToAsync(stream).ConfigureAwait(false);
+            await file.CopyToAsync(stream);
         }
         catch (Exception ex)
         {
@@ -1391,7 +1545,7 @@ public class WikiController : Controller
             return BadRequest();
         }
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user?.IsDeleted != false || user.IsDisabled)
         {
             return Unauthorized();
@@ -1429,7 +1583,7 @@ public class WikiController : Controller
 
         var user = await _userManager
             .GetUserAsync(User)
-            .ConfigureAwait(false);
+            ;
         if (user?.IsDeleted != false || user.IsDisabled)
         {
             return Unauthorized();
@@ -1447,7 +1601,7 @@ public class WikiController : Controller
             using var client = new HttpClient();
             bytes = await client
                 .GetByteArrayAsync(uri)
-                .ConfigureAwait(false);
+                ;
         }
         catch (Exception ex)
         {
@@ -1475,7 +1629,7 @@ public class WikiController : Controller
             return BadRequest();
         }
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user?.IsDeleted != false || user.IsDisabled)
         {
             return Unauthorized();
@@ -1501,7 +1655,7 @@ public class WikiController : Controller
                 return BadRequest();
             }
             fileName = Path.GetFileName(files[index]);
-            bytes = await System.IO.File.ReadAllBytesAsync(files[index]).ConfigureAwait(false);
+            bytes = await System.IO.File.ReadAllBytesAsync(files[index]);
         }
         catch (Exception ex)
         {
@@ -1524,7 +1678,7 @@ public class WikiController : Controller
             return BadRequest();
         }
 
-        var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+        var user = await _userManager.GetUserAsync(User);
         if (user?.IsDeleted != false || user.IsDisabled)
         {
             return Unauthorized();
@@ -1545,7 +1699,7 @@ public class WikiController : Controller
                 Directory.Delete(path);
                 return BadRequest();
             }
-            bytes = await System.IO.File.ReadAllBytesAsync(files[0]).ConfigureAwait(false);
+            bytes = await System.IO.File.ReadAllBytesAsync(files[0]);
             fileName = Path.GetFileName(files[0]);
         }
         catch (Exception ex)
@@ -1612,10 +1766,9 @@ public class WikiController : Controller
     {
         var data = GetWikiRouteData();
 
+        PagedListDTO<LinkInfo> links;
         if (type == SpecialListType.What_Links_Here)
         {
-            data.IsSpecialList = true;
-
             if (!ControllerContext.RouteData.Values.TryGetValue(WikiRouteData.RouteTitle, out var ti)
                 || ti is not string wT
                 || string.IsNullOrWhiteSpace(wT))
@@ -1623,24 +1776,27 @@ public class WikiController : Controller
                 return RedirectToAction("Read");
             }
 
-            var user = await _userManager.GetUserAsync(User).ConfigureAwait(false);
+            data.IsSpecialList = true;
+            data.CanEdit = false;
+            data.WikiItem = null;
 
-            var wikiItem = await GetWikiItemAsync(data).ConfigureAwait(false);
-            data.WikiItem = wikiItem;
-            if (wikiItem is null)
+            var list = await _dataStore.GetWhatLinksHereAsync(
+                _wikiOptions,
+                new WhatLinksHereRequest(
+                    data.Title,
+                    data.WikiNamespace,
+                    pageNumber,
+                    pageSize,
+                    descending,
+                    sort,
+                    filter));
+            if (list is null)
             {
-                data.CanEdit = user is not null
-                    && !_wikiOptions.ReservedNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase))
-                    && (user.IsWikiAdmin
-                    || !_wikiOptions.AdminNamespaces.Any(x => string.Equals(x, data.WikiNamespace, StringComparison.CurrentCultureIgnoreCase)));
+                return View("NoContent", data);
             }
             else
             {
-                if (!VerifyPermission(data, user))
-                {
-                    return View("NotAuthorized", data);
-                }
-                data.CanEdit = VerifyPermission(data, user, edit: true);
+                links = list;
             }
         }
         else
@@ -1648,32 +1804,34 @@ public class WikiController : Controller
             data.IsSystem = true;
             data.Title = data.Title.Replace('_', ' ');
             ViewData["Title"] = type.ToString().Replace('_', ' ');
+            links = await _dataStore.GetSpecialListAsync(
+                _wikiOptions,
+                new SpecialListRequest(
+                    type,
+                    pageNumber,
+                    pageSize,
+                    descending,
+                    sort,
+                    filter));
         }
-        var vm = await SpecialListViewModel
-            .NewAsync(_wikiOptions, _dataStore, data, type, pageNumber, pageSize, sort, descending, filter)
-            .ConfigureAwait(false);
-        return View("WikiItemList", vm);
-    }
 
-    private Article? GetWikiItem(string title, string wikiNamespace, bool noRedirect = false)
-    {
-        if (string.Equals(wikiNamespace, _wikiOptions.CategoryNamespace, StringComparison.OrdinalIgnoreCase))
-        {
-            return Category.GetCategory(_wikiOptions, _dataStore, title);
-        }
-        else if (string.Equals(wikiNamespace, _wikiOptions.FileNamespace, StringComparison.OrdinalIgnoreCase))
-        {
-            return WikiFile.GetFile(_wikiOptions, _dataStore, title);
-        }
-        else
-        {
-            return Article.GetArticle(_wikiOptions, _dataStore, title, wikiNamespace, noRedirect);
-        }
+        return View("WikiItemList", new SpecialListViewModel(
+            _wikiOptions,
+            data,
+            type,
+            descending,
+            links.ToPagedList(),
+            sort,
+            filter));
     }
 
     private async Task<Article?> GetWikiItemAsync(WikiRouteData data, bool noRedirect = false)
     {
-        var article = GetWikiItem(data.Title, data.WikiNamespace, noRedirect || data.NoRedirect);
+        var article = await _dataStore.GetWikiItemAsync(
+            _wikiOptions,
+            data.Title,
+            data.WikiNamespace,
+            noRedirect || data.NoRedirect);
         if (article is not null)
         {
             data.DisplayNamespace = article.WikiNamespace;
@@ -1683,16 +1841,24 @@ public class WikiController : Controller
 
         if (data.IsUserPage)
         {
-            var user = await _userManager.FindByIdAsync(article?.Title ?? data.Title).ConfigureAwait(false)
-                ?? await _userManager.FindByNameAsync(article?.Title ?? data.Title).ConfigureAwait(false);
+            var user = await _userManager.FindByIdAsync(article?.Title ?? data.Title)
+                ?? await _userManager.FindByNameAsync(article?.Title ?? data.Title);
             if (user is not null)
             {
-                data.DisplayTitle = user.UserName;
-                ViewData["Title"] = Article.GetFullTitle(_wikiOptions, data.DisplayTitle, data.WikiNamespace, data.IsTalk);
+                data.DisplayTitle = user.DisplayName ?? article?.Title ?? data.Title;
+                ViewData["Title"] = Article.GetFullTitle(
+                    _wikiOptions,
+                    data.DisplayTitle,
+                    data.WikiNamespace,
+                    data.IsTalk);
 
                 if (article is null && user.Id != data.Title)
                 {
-                    article = GetWikiItem(user.Id, data.WikiNamespace, noRedirect || data.NoRedirect);
+                    article = await _dataStore.GetWikiItemAsync(
+                        _wikiOptions,
+                        user.Id,
+                        data.WikiNamespace,
+                        noRedirect || data.NoRedirect);
                     if (article is not null)
                     {
                         data.Title = article.Title;
@@ -1702,17 +1868,25 @@ public class WikiController : Controller
         }
         else if (data.IsGroupPage)
         {
-            var group = await _groupManager.FindByIdAsync(article?.Title ?? data.Title).ConfigureAwait(false)
-                ?? await _groupManager.FindByNameAsync(article?.Title ?? data.Title).ConfigureAwait(false);
+            var group = await _groupManager.FindByIdAsync(article?.Title ?? data.Title)
+                ?? await _groupManager.FindByNameAsync(article?.Title ?? data.Title);
             if (group is not null)
             {
                 data.Group = group;
-                data.DisplayTitle = group.GroupName;
-                ViewData["Title"] = Article.GetFullTitle(_wikiOptions, data.DisplayTitle, data.WikiNamespace, data.IsTalk);
+                data.DisplayTitle = group.DisplayName ?? article?.Title ?? data.Title;
+                ViewData["Title"] = Article.GetFullTitle(
+                    _wikiOptions,
+                    data.DisplayTitle,
+                    data.WikiNamespace,
+                    data.IsTalk);
 
                 if (article is null && group.Id != data.Title)
                 {
-                    article = GetWikiItem(group.Id, data.WikiNamespace, noRedirect || data.NoRedirect);
+                    article = await _dataStore.GetWikiItemAsync(
+                        _wikiOptions,
+                        group.Id,
+                        data.WikiNamespace,
+                        noRedirect || data.NoRedirect);
                     if (article is not null)
                     {
                         data.Title = article.Title;
@@ -1727,6 +1901,7 @@ public class WikiController : Controller
     private WikiRouteData GetWikiRouteData()
     {
         var data = new WikiRouteData(_wikiOptions, _wikiMvcOptions, ControllerContext.RouteData, HttpContext.Request);
+        _wikiViewState.IsCompact = data.IsCompact;
         ViewData[nameof(WikiRouteData)] = data;
         ViewData["Title"] = Article.GetFullTitle(_wikiOptions, data.Title, data.WikiNamespace, data.IsTalk);
         return data;
@@ -1763,13 +1938,13 @@ public class WikiController : Controller
                 return View("NotAuthorizedToUpload");
             }
 
-            var limit = await _groupManager.UserMaxUploadLimit(user).ConfigureAwait(false);
+            var limit = await _groupManager.UserMaxUploadLimit(user);
             if (limit == 0)
             {
                 return View("NotAuthorizedToUpload");
             }
 
-            return View("Upload", new UploadViewModel(_wikiOptions, _dataStore, data));
+            return View("Upload", await UploadViewModel.NewAsync(_wikiOptions, _dataStore, data));
         }
         else if (Enum.TryParse<SpecialListType>(data.Title, ignoreCase: true, out var type))
         {
@@ -1801,7 +1976,7 @@ public class WikiController : Controller
                 pageSize,
                 sort,
                 descending,
-                filter).ConfigureAwait(false);
+                filter);
         }
 
         return null;

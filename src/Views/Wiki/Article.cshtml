@@ -1,5 +1,5 @@
-﻿@model WikiItemViewModel
-@inject IWikiOptions WikiOptions
+﻿@model WikiItemInfo
+@inject WikiOptions WikiOptions
 @inject IWikiMvcOptions WikiMvcOptions
 
 <div class="wiki-site-subtitle">From @WikiOptions.SiteName</div>
@@ -9,21 +9,21 @@
 }
 else if (Model is not null)
 {
-    if (Model.Data.WikiItem is not null)
+    if (Model.Item is not null)
     {
-        var frontmatter = WikiMvcOptions.GetArticleFrontMatter(Model.Data.WikiItem);
+        var frontmatter = WikiMvcOptions.GetArticleFrontMatter(Model.Item);
         if (!string.IsNullOrEmpty(frontmatter))
         {
-            <partial name="@frontmatter" model="Model.Data.WikiItem" />
+            <partial name="@frontmatter" model="Model.Item" />
         }
     }
     <div class="wiki-parser-output">@Html.Raw(Model.Html)</div>
-    if (Model.Data.WikiItem is not null)
+    if (Model.Item is not null)
     {
-        var endmatter = WikiMvcOptions.GetArticleEndMatter(Model.Data.WikiItem);
+        var endmatter = WikiMvcOptions.GetArticleEndMatter(Model.Item);
         if (!string.IsNullOrEmpty(endmatter))
         {
-            <partial name="@endmatter" model="Model.Data.WikiItem" />
+            <partial name="@endmatter" model="Model.Item" />
         }
     }
 }

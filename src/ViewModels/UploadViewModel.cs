@@ -100,26 +100,46 @@ public class UploadViewModel
     /// <summary>
     /// Initialize a new instance of <see cref="UploadViewModel"/>.
     /// </summary>
-    public UploadViewModel(
-        IWikiOptions options,
+    public UploadViewModel(WikiRouteData data, string? markdown, string? preview, string? title)
+    {
+        Data = data;
+        Markdown = markdown;
+        Preview = preview;
+        Title = title;
+    }
+
+    /// <summary>
+    /// Get a new instance of <see cref="UploadViewModel"/>.
+    /// </summary>
+    public static async Task<UploadViewModel> NewAsync(
+        WikiOptions options,
         IDataStore dataStore,
         WikiRouteData data,
         string? markdown = null,
         string? previewTitle = null)
     {
-        Data = data;
-
-        Markdown = markdown;
-
+        string? preview = null;
         if (!string.IsNullOrWhiteSpace(previewTitle))
         {
             var (wikiNamespace, title, _, _) = Article.GetTitleParts(options, previewTitle);
             var fullTitle = Article.GetFullTitle(options, title, wikiNamespace);
-            Preview = string.IsNullOrWhiteSpace(markdown)
+            preview = string.IsNullOrWhiteSpace(markdown)
                 ? null
-                : MarkdownItem.RenderHtml(options, dataStore, TransclusionParser.Transclude(options, dataStore, title, fullTitle, markdown, out _));
+                : MarkdownItem.RenderHtml(
+                    options,
+                    dataStore,
+                    await TransclusionParser.TranscludeAsync(
+                        options,
+                        dataStore,
+                        title,
+                        fullTitle,
+                        markdown));
         }
 
-        Title = previewTitle;
+        return new UploadViewModel(
+            data,
+            markdown,
+            preview,
+            previewTitle);
     }
 }

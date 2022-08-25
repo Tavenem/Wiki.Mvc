@@ -1,16 +1,12 @@
-﻿@model GroupViewModel
-@inject IWikiOptions WikiOptions
+﻿@model GroupPageInfo
+@inject WikiOptions WikiOptions
 
 <div class="wiki-site-subtitle">From @WikiOptions.SiteName</div>
-@if (Model?.IsDiff == true)
+@if (Model?.Item is not null)
 {
-    <div class="wiki-parser-output wiki-diff">@Html.Raw(Model.Html)</div>
+    <div class="wiki-parser-output">@Html.Raw(Model.Item.Html)</div>
 }
-else if (Model is not null)
-{
-    <div class="wiki-parser-output">@Html.Raw(Model.Html)</div>
-}
-@if (Model?.Users.Count > 0)
+@if (Model?.Users?.Count > 0)
 {
     <h2>Members</h2>
     <p>This group has the following @($"{Model.Users.Count:N0}") members.</p>
@@ -22,7 +18,7 @@ else if (Model is not null)
                    asp-route-title="@user.Id"
                    asp-route-wikiNamespace="@WikiOptions.UserNamespace"
                    asp-action="Read"
-                   title="Visit the user page for @(user.UserName)">@user.UserName</a>
+                   title="Visit the user page for @(user.Entity?.DisplayName ?? user.Id)">@(user.Entity?.DisplayName ?? user.Id)</a>
             </li>
         }
     </ul>

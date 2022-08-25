@@ -19,7 +19,7 @@ public class DefaultSearchClient : ISearchClient
 {
     private readonly IDataStore _dataStore;
     private readonly ILogger<DefaultSearchClient> _logger;
-    private readonly IWikiOptions _options;
+    private readonly WikiOptions _options;
 
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultSearchClient"/>.
@@ -27,7 +27,7 @@ public class DefaultSearchClient : ISearchClient
     public DefaultSearchClient(
         IDataStore dataStore,
         ILogger<DefaultSearchClient> logger,
-        IWikiOptions options)
+        WikiOptions options)
     {
         _dataStore = dataStore;
         _logger = logger;
@@ -197,25 +197,34 @@ public class DefaultSearchClient : ISearchClient
             var articles = await query.GetPageAsync(request.PageNumber, request.PageSize)
                 .ConfigureAwait(false);
 
-            var hits = new PagedList<SearchHit>(
-                articles.Select(x => new SearchHit(
-                    x.Title,
-                    x.WikiNamespace,
-                    Article.GetFullTitle(_options, x.Title, x.WikiNamespace),
-                    queryEmpty
-                        ? x.GetPlainText(_options, _dataStore)
-                        : Regex.Replace(
-                            x.GetPlainText(_options, _dataStore, x.MarkdownContent[
-                                Math.Max(0, x.MarkdownContent.LastIndexOf(
+            var hits = new List<SearchHit>();
+            foreach (var article in articles)
+            {
+                var exceprt = queryEmpty
+                    ? await article.GetPlainTextAsync(_options, _dataStore)
+                    : Regex.Replace(
+                        await article.GetPlainTextAsync(
+                            _options,
+                            _dataStore,
+                            article.MarkdownContent[
+                                Math.Max(0, article.MarkdownContent.LastIndexOf(
                                     ' ',
-                                    Math.Max(0, x.MarkdownContent.LastIndexOf(
+                                    Math.Max(0, article.MarkdownContent.LastIndexOf(
                                         ' ',
-                                        Math.Max(0, x.MarkdownContent.IndexOf(
+                                        Math.Max(0, article.MarkdownContent.IndexOf(
                                             request.Query!,
                                             StringComparison.OrdinalIgnoreCase))) - 1)))..]),
-                            $"({Regex.Escape(request.Query!)})",
-                            "<strong class=\"wiki-search-hit\">$1</strong>",
-                            RegexOptions.IgnoreCase))),
+                        $"({Regex.Escape(request.Query!)})",
+                        "<strong class=\"wiki-search-hit\">$1</strong>",
+                        RegexOptions.IgnoreCase);
+                hits.Add(new SearchHit(
+                    article.Title,
+                    article.WikiNamespace,
+                    Article.GetFullTitle(_options, article.Title, article.WikiNamespace),
+                    exceprt));
+            }
+            var page = new PagedList<SearchHit>(
+                hits,
                 articles.PageNumber,
                 articles.PageSize,
                 articles.TotalCount);
@@ -224,7 +233,7 @@ public class DefaultSearchClient : ISearchClient
             {
                 Descending = request.Descending,
                 Query = request.Query,
-                SearchHits = hits,
+                SearchHits = page,
                 Sort = request.Sort,
             };
         }
@@ -347,25 +356,34 @@ public class DefaultSearchClient : ISearchClient
             var articles = await query.GetPageAsync(request.PageNumber, request.PageSize)
                 .ConfigureAwait(false);
 
-            var hits = new PagedList<SearchHit>(
-                articles.Select(x => new SearchHit(
-                    x.Title,
-                    x.WikiNamespace,
-                    Article.GetFullTitle(_options, x.Title, x.WikiNamespace),
-                    queryEmpty
-                        ? x.GetPlainText(_options, _dataStore)
-                        : Regex.Replace(
-                            x.GetPlainText(_options, _dataStore, x.MarkdownContent[
-                                Math.Max(0, x.MarkdownContent.LastIndexOf(
+            var hits = new List<SearchHit>();
+            foreach (var article in articles)
+            {
+                var exceprt = queryEmpty
+                    ? await article.GetPlainTextAsync(_options, _dataStore)
+                    : Regex.Replace(
+                        await article.GetPlainTextAsync(
+                            _options,
+                            _dataStore,
+                            article.MarkdownContent[
+                                Math.Max(0, article.MarkdownContent.LastIndexOf(
                                     ' ',
-                                    Math.Max(0, x.MarkdownContent.LastIndexOf(
+                                    Math.Max(0, article.MarkdownContent.LastIndexOf(
                                         ' ',
-                                        Math.Max(0, x.MarkdownContent.IndexOf(
+                                        Math.Max(0, article.MarkdownContent.IndexOf(
                                             request.Query!,
                                             StringComparison.OrdinalIgnoreCase))) - 1)))..]),
-                            $"({Regex.Escape(request.Query!)})",
-                            "<strong class=\"wiki-search-hit\">$1</strong>",
-                            RegexOptions.IgnoreCase))),
+                        $"({Regex.Escape(request.Query!)})",
+                        "<strong class=\"wiki-search-hit\">$1</strong>",
+                        RegexOptions.IgnoreCase);
+                hits.Add(new SearchHit(
+                    article.Title,
+                    article.WikiNamespace,
+                    Article.GetFullTitle(_options, article.Title, article.WikiNamespace),
+                    exceprt));
+            }
+            var page = new PagedList<SearchHit>(
+                hits,
                 articles.PageNumber,
                 articles.PageSize,
                 articles.TotalCount);
@@ -374,7 +392,7 @@ public class DefaultSearchClient : ISearchClient
             {
                 Descending = request.Descending,
                 Query = request.Query,
-                SearchHits = hits,
+                SearchHits = page,
                 Sort = request.Sort,
             };
         }
@@ -520,25 +538,34 @@ public class DefaultSearchClient : ISearchClient
             var articles = await query.GetPageAsync(request.PageNumber, request.PageSize)
                 .ConfigureAwait(false);
 
-            var hits = new PagedList<SearchHit>(
-                articles.Select(x => new SearchHit(
-                    x.Title,
-                    x.WikiNamespace,
-                    Article.GetFullTitle(_options, x.Title, x.WikiNamespace),
-                    queryEmpty
-                        ? x.GetPlainText(_options, _dataStore)
-                        : Regex.Replace(
-                            x.GetPlainText(_options, _dataStore, x.MarkdownContent[
-                                Math.Max(0, x.MarkdownContent.LastIndexOf(
+            var hits = new List<SearchHit>();
+            foreach (var article in articles)
+            {
+                var exceprt = queryEmpty
+                    ? await article.GetPlainTextAsync(_options, _dataStore)
+                    : Regex.Replace(
+                        await article.GetPlainTextAsync(
+                            _options,
+                            _dataStore,
+                            article.MarkdownContent[
+                                Math.Max(0, article.MarkdownContent.LastIndexOf(
                                     ' ',
-                                    Math.Max(0, x.MarkdownContent.LastIndexOf(
+                                    Math.Max(0, article.MarkdownContent.LastIndexOf(
                                         ' ',
-                                        Math.Max(0, x.MarkdownContent.IndexOf(
+                                        Math.Max(0, article.MarkdownContent.IndexOf(
                                             request.Query!,
                                             StringComparison.OrdinalIgnoreCase))) - 1)))..]),
-                            $"({Regex.Escape(request.Query!)})",
-                            "<strong class=\"wiki-search-hit\">$1</strong>",
-                            RegexOptions.IgnoreCase))),
+                        $"({Regex.Escape(request.Query!)})",
+                        "<strong class=\"wiki-search-hit\">$1</strong>",
+                        RegexOptions.IgnoreCase);
+                hits.Add(new SearchHit(
+                    article.Title,
+                    article.WikiNamespace,
+                    Article.GetFullTitle(_options, article.Title, article.WikiNamespace),
+                    exceprt));
+            }
+            var page = new PagedList<SearchHit>(
+                hits,
                 articles.PageNumber,
                 articles.PageSize,
                 articles.TotalCount);
@@ -547,7 +574,7 @@ public class DefaultSearchClient : ISearchClient
             {
                 Descending = request.Descending,
                 Query = request.Query,
-                SearchHits = hits,
+                SearchHits = page,
                 Sort = request.Sort,
             };
         }

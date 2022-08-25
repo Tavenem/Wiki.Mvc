@@ -1,14 +1,11 @@
-﻿@model CategoryViewModel
-@inject IWikiOptions WikiOptions
+﻿@model CategoryInfo
+@inject WikiOptions WikiOptions
+@inject WikiViewState WikiViewState
 
 <div class="wiki-site-subtitle">From @WikiOptions.SiteName</div>
-@if (Model?.IsDiff == true)
+@if (Model?.Item is not null)
 {
-    <div class="wiki-parser-output wiki-diff">@Html.Raw(Model.Html)</div>
-}
-else if (Model is not null)
-{
-    <div class="wiki-parser-output">@Html.Raw(Model.Html)</div>
+    <div class="wiki-parser-output">@Html.Raw(Model.Item.Html)</div>
 }
 @if ((Model?.Subcategories?.Count ?? 0) > 0)
 {
@@ -23,7 +20,7 @@ else if (Model is not null)
                     @foreach (var item in group)
                     {
                         <li class="wiki-category-sub">
-                            <a href="@(Model.Data.IsCompact ? $"/Compact/{WikiOptions.WikiLinkPrefix}/{WikiOptions.CategoryNamespace}:{item.Title}" : $"/{WikiOptions.WikiLinkPrefix}/{WikiOptions.CategoryNamespace}:{item.Title}")">@item.Title</a>
+                            <a href="@WikiOptions.GetWikiPageUrl(item.Title, WikiOptions.CategoryNamespace, query: WikiViewState.IsCompact ? "compact=true" : null)">@item.Title</a>
                             (@($"{item.Count:N0}") members)
                         </li>
                     }
@@ -34,7 +31,7 @@ else if (Model is not null)
 }
 @if ((Model?.Articles?.Count ?? 0) > 0)
 {
-    <h2>Pages in @Model!.Data.Title</h2>
+    <h2>Pages in @Model!.Item?.Title</h2>
     <p>The following @($"{Model.Articles!.Count:N0}") pages are in this category.</p>
     <div class="wiki-category-list wiki-category-articles-list">
         @foreach (var group in Model.Articles)
@@ -45,7 +42,7 @@ else if (Model is not null)
                     @foreach (var item in group)
                     {
                         <li class="wiki-category-article">
-                            <a href="@(Model.Data.IsCompact ? $"/Compact/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}" : $"/{WikiOptions.WikiLinkPrefix}/{item.WikiNamespace}:{item.Title}")">@item.FullTitle</a>
+                            <a href="@WikiOptions.GetWikiPageUrl(item.Title, item.WikiNamespace, query: WikiViewState.IsCompact ? "compact=true" : null)">@Article.GetFullTitle(WikiOptions, item.Title, item.WikiNamespace)</a>
                         </li>
                     }
                 </ul>
@@ -55,7 +52,7 @@ else if (Model is not null)
 }
 @if ((Model?.Files?.Count ?? 0) > 0)
 {
-    <h2>Files in @Model!.Data.Title</h2>
+    <h2>Files in @Model!.Item?.Title</h2>
     <p>The following @($"{Model.Files!.Count:N0}") files are in this category.</p>
     <div class="wiki-category-list wiki-category-file-list">
         @foreach (var group in Model.Files)
@@ -66,7 +63,7 @@ else if (Model is not null)
                     @foreach (var item in group)
                     {
                         <li class="wiki-category-file">
-                            <a href="@(Model.Data.IsCompact ? $"/Compact/{WikiOptions.WikiLinkPrefix}/{WikiOptions.CategoryNamespace}:{item.Title}" : $"/{WikiOptions.WikiLinkPrefix}/{WikiOptions.FileNamespace}:{item.Title}")">@item.Title</a>
+                            <a href="@WikiOptions.GetWikiPageUrl(item.Title, WikiOptions.FileNamespace, query: WikiViewState.IsCompact ? "compact=true" : null)">@item.Title</a>
                             (@WikiFile.GetFileSizeString(item.Size))
                         </li>
                     }

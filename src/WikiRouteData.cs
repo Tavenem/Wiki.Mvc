@@ -206,7 +206,7 @@ public class WikiRouteData
     /// Initializes a new instance of <see cref="WikiRouteData"/>.
     /// </summary>
     public WikiRouteData(
-        IWikiOptions wikiOptions,
+        WikiOptions wikiOptions,
         IWikiMvcOptions wikiMvcOptions,
         RouteData routeData,
         HttpRequest request)
