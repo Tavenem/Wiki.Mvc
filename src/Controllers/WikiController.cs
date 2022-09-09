@@ -534,8 +534,7 @@ public class WikiController : Controller
                     originalNamespace,
                     owner,
                     allowedEditors,
-                    allowedViewers)
-                    ;
+                    allowedViewers);
             }
             catch (Exception ex)
             {

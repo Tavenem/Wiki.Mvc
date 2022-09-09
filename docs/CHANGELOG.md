@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2-preview
+### Changed
+- Minor bugfixes
+- Update README
+
 ## 0.6.1-preview
 ### Updated
 - Update dependencies

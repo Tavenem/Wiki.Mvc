@@ -18,24 +18,21 @@ In order to use Tavenem.Wiki.Mvc in an [ASP.NET Core](https://docs.microsoft.com
 project, the following steps should be taken:
 
 1. Add [SignalR](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction) by calling
-   `AddSignalR()` in the `ConfigureServices` method of your `Startup` class. This is necessary for
-   discussion pages to function.
-1. Call one of the overloads of `AddWiki` in the `ConfigureServices` method of your `Startup` class.
-   `AddWiki()` has two required parameters, but you will usually want to provide all available
-   parameters.
+   `AddSignalR`  on an `IServiceCollection` instance in your `Program.cs` file. This is necessary
+   for discussion pages to function.
+1. Call one of the overloads of `AddWiki`  on an `IServiceCollection` instance in your `Program.cs`
+   file. `AddWiki` has two required parameters and four optional parameters.
    
    The first parameter is either an instance of `IWikiUserManager`, or the type of an implementation
    of that interface which is available via dependency injection, or a function which provides one.
    This interface allows the wiki to get information about users. Typically this will be a wrapper
    around your actual user persistence mechanism (e.g. [ASP.NET Core
-   Identity](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity)). See
-   the "complete" sample for an example implementation.
+   Identity](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity)).
 
    The second parameter is either an instance of `IWikiGroupManager`, or the type of an
    implementation of that interface which is available via dependency injection, or a function which
    provides one. This interface allows the wiki to get information about user groups. Typically this
-   will be a wrapper around your actual user group persistence mechanism. See the "complete" sample
-   for an example implementation.
+   will be a wrapper around your actual user group persistence mechanism.
 
    The next parameter is either an instance of `WikiOptions` or a function which provides one.
    This interface allows you to configure the wiki's core features. See the README for
@@ -118,8 +115,8 @@ project, the following steps should be taken:
    Note: the `DefaultSearchClient` is not recommended for production use. It is provided only to
    ensure that basic search functionality operates when an implementation of `ISearchClient` is not
    available (e.g. during debugging if the production client cannot be used during development).
-1. Call `MapWiki()` in the configuration function of your `UseEndpoints()`
-   call in the `Configure` method of your `Startup` class.
+1. Call `MapWiki` in the configuration function of your `UseEndpoints`
+   call.
 
    For example:
    ```c#
@@ -130,6 +127,7 @@ project, the following steps should be taken:
        endpoints.MapRazorPages();
    });
    ```
+   This call should normally precede any other mapped endpoints.
 1. Add references to the [Razor class
    library](https://docs.microsoft.com/en-us/aspnet/core/razor-pages/ui-class)'s stylesheets in the
    `<head>` tag of your main layout, and its scripts at the bottom of your body, before the Scripts

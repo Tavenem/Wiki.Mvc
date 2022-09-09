@@ -12,12 +12,12 @@
     <h2>Subcategories</h2>
     <p>This category has the following @($"{Model!.Subcategories!.Count:N0}") subcategories.</p>
     <div class="wiki-category-list wiki-category-sub-list">
-        @foreach (var group in Model.Subcategories)
+        @foreach (var group in Model.Subcategories.OrderBy(x => x.Key))
         {
             <div class="wiki-category-group">
                 <h3>@group.Key</h3>
                 <ul>
-                    @foreach (var item in group)
+                    @foreach (var item in group.Value)
                     {
                         <li class="wiki-category-sub">
                             <a href="@WikiOptions.GetWikiPageUrl(item.Title, WikiOptions.CategoryNamespace, query: WikiViewState.IsCompact ? "compact=true" : null)">@item.Title</a>
@@ -34,12 +34,12 @@
     <h2>Pages in @Model!.Item?.Title</h2>
     <p>The following @($"{Model.Articles!.Count:N0}") pages are in this category.</p>
     <div class="wiki-category-list wiki-category-articles-list">
-        @foreach (var group in Model.Articles)
+        @foreach (var group in Model.Articles.OrderBy(x => x.Key))
         {
             <div class="wiki-category-group">
                 <h3>@group.Key</h3>
                 <ul>
-                    @foreach (var item in group)
+                    @foreach (var item in group.Value)
                     {
                         <li class="wiki-category-article">
                             <a href="@WikiOptions.GetWikiPageUrl(item.Title, item.WikiNamespace, query: WikiViewState.IsCompact ? "compact=true" : null)">@Article.GetFullTitle(WikiOptions, item.Title, item.WikiNamespace)</a>
@@ -55,12 +55,12 @@
     <h2>Files in @Model!.Item?.Title</h2>
     <p>The following @($"{Model.Files!.Count:N0}") files are in this category.</p>
     <div class="wiki-category-list wiki-category-file-list">
-        @foreach (var group in Model.Files)
+        @foreach (var group in Model.Files.OrderBy(x => x.Key))
         {
             <div class="wiki-category-group">
                 <h3>@group.Key</h3>
                 <ul>
-                    @foreach (var item in group)
+                    @foreach (var item in group.Value)
                     {
                         <li class="wiki-category-file">
                             <a href="@WikiOptions.GetWikiPageUrl(item.Title, WikiOptions.FileNamespace, query: WikiViewState.IsCompact ? "compact=true" : null)">@item.Title</a>

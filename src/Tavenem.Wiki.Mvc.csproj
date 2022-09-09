@@ -40,7 +40,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Tavenem.Wiki" Version="0.8.6-preview" />
+    <PackageReference Include="Tavenem.Wiki" Version="0.11.1-preview" />
   </ItemGroup>
 
   <!-- npm -->
